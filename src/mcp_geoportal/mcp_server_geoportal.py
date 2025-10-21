@@ -1,10 +1,13 @@
-import logging
 import json
+import logging
+import re
+from typing import Union
+
 import duckdb
 import httpx
 import uvicorn
-
 from mcp.server.fastmcp import FastMCP
+from tools.mcp_base_functions import *
 
 #mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
 mcp = FastMCP("Geoportal des Kantons Bern")
@@ -53,8 +56,11 @@ def get_oereb_themes() -> dict[str, str]:
     return result_dict
 
 
-@mcp.tool()
-def get_egrid_from_address(searchtext: str) -> str:
+@mcp.tool(
+    name="address_to_egrid",
+    description="Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator) zurück."
+)
+def get_egrid_from_address(searchtext: str) ->  Union[str, dict]:
     """Suche für den eingegebene Adresse den dazugehörigen EGRID.
 
     Args:
@@ -67,14 +73,25 @@ def get_egrid_from_address(searchtext: str) -> str:
     params = {"searchtext": searchtext}
     result = httpx.get(url_search, params=params)
     js = result.json()
-    x = js[0]["x"]
-    y = js[0]["y"]
+    result_ohnePLZ = (re.sub(r'\b\d{4}\b\s*', '', js[0]['label'])).lower()
+    if result_ohnePLZ == searchtext.replace(',','').lower():
+        # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
+        x = js[0]["x"]
+        y = js[0]["y"]
 
-    url_oereb = f"{OEREB_API_BASE}/getegrid/json/?EN={x},{y}"
-    result = httpx.get(url_oereb)
-    js = result.json()
-    egrid = js["GetEGRIDResponse"][0]["egrid"]
-    return egrid
+        url_oereb = f"{OEREB_API_BASE}/getegrid/json/?EN={x},{y}"
+        result = httpx.get(url_oereb)
+        js = result.json()
+        egrid = js["GetEGRIDResponse"][0]["egrid"]
+        return egrid
+    else:
+        adresslist = []
+        for foo in js:
+            adresslist.append(foo['label'])
+        return {
+            "hinweis": "Mehrdeutige oder unpräzise Adresse. Bitte wähle eine der folgenden Adressen:",
+            "optionen": adresslist
+        }
 
 
 @mcp.tool()
