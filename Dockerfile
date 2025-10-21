@@ -1,37 +1,30 @@
-FROM python:3.13.9-slim-bookworm as builder
+FROM python:3.13.9-slim as builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.9.3 /uv /bin/uv
+WORKDIR /app
 
-WORKDIR /usr/src/mcp_geoportal
+COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
 
-ENV UV_COMPILE_BYTECODE=1
+COPY pyproject.toml ./
+COPY uv.lock* ./
+COPY README.md* ./
 
-RUN apt-get update && apt-get -y upgrade && \
-	DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-	libgeos-c1v5 libpq5 build-essential libgeos-dev libpq-dev
+RUN uv sync --frozen --no-dev
 
-ADD . /usr/src/mcp_geoportal
+FROM python:3.13.9-slim
 
-RUN uv sync --frozen --no-dev --no-cache
+WORKDIR /app
 
-FROM python:3.13.9-slim-bookworm
+RUN groupadd -r -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
 
-RUN apt-get update && apt-get -y upgrade && \
-	DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
-	gosu tini && \
-    apt-get clean && \
-    rm --force --recursive /var/lib/apt/lists/*
+COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
 
-RUN groupadd mcp && useradd -g mcp mcprunner
+COPY --from=builder /app/.venv /app/.venv
 
-WORKDIR /usr/src/mcp_geoportal
+COPY --chown=appuser:appuser . .
 
-COPY --from=builder --chown=mcprunner:mcp /usr/src/mcp_geoportal /usr/src/mcp_geoportal
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
 
-RUN chmod +x run_mcp_server_uvicorn.sh
+USER appuser
 
-ENV PATH="/usr/src/mcp_geoportal/.venv/bin:$PATH"
-
-ENTRYPOINT [ "gosu", "oerebrunner", "tini", "--" ]
-
-CMD ["/usr/src/mcp_geoportal/run_mcp_server_uvicorn.sh"]
+CMD ["python", "src/mcp_geoportal/mcp_server_geoportal.py"]
