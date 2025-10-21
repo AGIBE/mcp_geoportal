@@ -6,8 +6,9 @@ import uvicorn
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
-app = mcp.streamable_http_app()
+#mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
+mcp = FastMCP("Geoportal des Kantons Bern")
+#app = mcp.streamable_http_app()
 
 # Constants
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
@@ -260,10 +261,11 @@ def get_gemeinde_infos() -> list[dict]:
 
 
 if __name__ == "__main__":
-    uvicorn.run(
-        "mcp_server_geoportal:app",
-        host="0.0.0.0",
-        port=6789,
-        workers=2,
-        timeout_keep_alive=300
-    )
+    mcp.run(transport='stdio')
+    # uvicorn.run(
+    #     "mcp_server_geoportal:app",
+    #     host="0.0.0.0",
+    #     port=6789,
+    #     workers=2,
+    #     timeout_keep_alive=300
+    # )

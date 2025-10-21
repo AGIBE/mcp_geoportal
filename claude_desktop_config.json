@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "Geoportal Kanton Bern": {
+      "command": "C:/Users/M9K3/.local/bin/uv.exe",
+      "args": [
+        "--directory",
+		"C:/Daten/repos/ChatBot/src/mcp_server",
+        "run",
+        "mcp_server_geoportal.py"
+      ]
+    }
+  }
+}
