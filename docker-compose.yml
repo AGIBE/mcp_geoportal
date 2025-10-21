@@ -2,6 +2,6 @@ version: "3"
 services:
   mcp_geoportal:
     container_name: mcp-geoportal
-    image: mcp_geoportal:0.1
+    image: mcp_geoportal:0.2
     ports:
       - "6789:6789"
