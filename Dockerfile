@@ -14,7 +14,7 @@ FROM python:3.13.9-slim
 
 WORKDIR /app
 
-RUN groupadd -r -g 1000 appuser && useradd -r -u 1000 -g appuser appuser
+RUN groupadd -r -g 900 appuser && useradd -r -u 900 -g appuser appuser
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
 
