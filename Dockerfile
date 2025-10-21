@@ -21,6 +21,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
 COPY --from=builder /app/.venv /app/.venv
 
 #COPY --chown=appuser:appuser . .
+COPY . .
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
