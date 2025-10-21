@@ -4,9 +4,12 @@
       "command": "C:/Users/M9K3/.local/bin/uv.exe",
       "args": [
         "--directory",
-		"C:/Daten/repos/ChatBot/src/mcp_server",
+		"C:/Daten/repos/mcp_geoportal",
         "run",
-        "mcp_server_geoportal.py"
+        "python",
+        "src/mcp_geoportal/mcp_server_geoportal.py",
+        "--mode",
+        "stdio"
       ]
     }
   }

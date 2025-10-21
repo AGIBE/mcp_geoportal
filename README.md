@@ -10,7 +10,7 @@ Dieser Ordner enthält einen einfachen POC für einen MCP-Server, der in einem L
 # Debugging mit MCP Inspector
 Der MCP-Server kann mit dem im SDK eingebauten MCP Inspector (Webapplikation) getestet und debugged werden. Das ist besonders nützlich weil z.B. Claude Desktop nur ein ziemliche limitierte Anzahl Prompts zulässt, die schnell aufgebraucht sind. Der MCP Inspector kann folgendermassen gestartet werden:
 1. In der Kommandozeile in das Verzeichnis des MCP-Servers wechseln
-2. just run ausführen
+2. just local_dev ausführen
     - Python Environment wird installiert
     - evtl. muss eine Node.JS-Installationsfrage mit Ja beantwortet werden
     - anschliessend geht ein Browser-Fenster mit dem MCP-Inspector auf.
