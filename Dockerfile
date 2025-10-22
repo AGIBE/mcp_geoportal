@@ -29,4 +29,4 @@ RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
 
 # appuser
 
-CMD ["python", "src/mcp_geoportal/mcp_server_geoportal.py"]
+CMD ["python", "src/mcp_geoportal/mcp_server_geoportal.py", "--mode", "http"]

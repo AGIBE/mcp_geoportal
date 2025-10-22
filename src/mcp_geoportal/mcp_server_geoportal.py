@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import re
@@ -278,11 +279,27 @@ def get_gemeinde_infos() -> list[dict]:
 
 
 if __name__ == "__main__":
-    mcp.run(transport='stdio')
-    # uvicorn.run(
-    #     "mcp_server_geoportal:app",
-    #     host="0.0.0.0",
-    #     port=6789,
-    #     workers=2,
-    #     timeout_keep_alive=300
-    # )
+    parser = argparse.ArgumentParser(description="MCP Server Geoportal")
+    parser.add_argument(
+        "--mode",
+        choices=["stdio", "http"],
+        default="stdio",
+        help="Server-Modus: stdio (lokal) oder http (remote)",
+        required=False
+    )
+
+    args = parser.parse_args() 
+
+    if args.mode == "stdio":
+        mcp.run(transport='stdio')
+    else:
+        app = mcp.streamable_http_app()
+        config = uvicorn.Config(app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300)
+        server = uvicorn.Server(config)
+        server.run()
+        # uvicorn.run(
+        #     app,
+        #     host="0.0.0.0",
+        #     port=6789,
+        #     timeout_keep_alive=300
+        # )
