@@ -19,6 +19,37 @@ MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
 OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 
+#base_function
+@mcp.tool(
+        description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde."
+)
+def get_bfsnr_for_gemeinde(searchtext: str) ->  Union[float, dict]:
+    """
+    Args:
+        searchtext (str): Suchtext mit dem nach der BFS-Nummer gesucht wird (Format: Gemeindename).
+    Returns:
+        float: BFS-Nummer
+    """
+    url_search = f"{MWH_API_BASE}/rpc/oereb_search"
+    params = {"searchtext": searchtext, "origins": "grenz5"}
+    result = httpx.get(url_search, params=params)
+    js = result.json()
+    result_ohnebfs = (re.sub(r'\s\d+', '', js[0]['label'])).lower()
+    if len(js) == 1 or (result_ohnebfs == searchtext.lower()):
+        # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
+        bfsnr = int((re.findall(r'\s\d+', js[0]['label'])[0]).strip())
+
+        return bfsnr
+    else:
+        adresslist = []
+        for gemeinde in js:
+            adresslist.append(gemeinde['label'])
+        return {
+            "hinweis": "Mehrdeutiger oder unpräziser Gemeindename. Bitte wähle eine der folgenden Gemeinden:",
+            "optionen": adresslist
+        }
+
+
 @mcp.tool()
 def get_geoproducts() -> list[dict]:
     """Frage im Metawarehouse des Geoportals alle Geoprodukte des Kantons Bern ab.
@@ -56,19 +87,22 @@ def get_oereb_themes() -> dict[str, str]:
 
     return result_dict
 
-
+#base_function
 @mcp.tool(
     name="address_to_egrid",
-    description="Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator) zurück."
+    description="""Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator) 
+    sowie die X- und Y-Koordinate zurück."""
 )
-def get_egrid_from_address(searchtext: str) ->  Union[str, dict]:
-    """Suche für den eingegebene Adresse den dazugehörigen EGRID.
-
+def get_egrid_from_address(searchtext: str) ->  Union[dict[str, float, float], dict]:
+    """
     Args:
-        searchtext (str): Suchtext mit dem nach der Adresse gesucht wird.
+        searchtext (str): Suchtext mit dem nach der Adresse gesucht wird (Format: Strasse Nr., Gemeinde).
 
     Returns:
-        str: Eidgenössischer Grundstück-Identifikator. Beginnt mit "CH".
+        dict:                    
+            - egrid: E-GRID der Adresse. Beginnt mit "CH".
+            - x: X-Koordinate der Adresse
+            - y: Y-Koordinate der Adresse
     """
     url_search = f"{MWH_API_BASE}/rpc/oereb_search"
     params = {"searchtext": searchtext}
@@ -84,7 +118,10 @@ def get_egrid_from_address(searchtext: str) ->  Union[str, dict]:
         result = httpx.get(url_oereb)
         js = result.json()
         egrid = js["GetEGRIDResponse"][0]["egrid"]
-        return egrid
+        #return egrid
+        return {'egrid': egrid,
+         'x': x,
+         'y': y}
     else:
         adresslist = []
         for foo in js:
@@ -227,15 +264,17 @@ def get_gefahrenstufe_mapped(value: int) -> str:
     return mapping.get(value, "unbekannte Gefahrenstufe")
 
 
-@mcp.tool()
-def get_bohrprofile_for_address(adresse: str) -> dict:
-    """Gibt die Bohrprofile (gemäss Geoprodukt GEOSOND) im Umkreis von 300m um die übergebene Adresse zurück. 
+@mcp.tool(
+    name="get_bohrprofile",
+    description="""Gibt die Bohrprofile (gemäss Geoprodukt GEOSOND) im Umkreis von 300m um den eingegebenen E-GRID zurück."""
+)
+def get_bohrprofile_for_address(egrid: str) -> dict:
+    """
     Args:
-        adresse (str): Adresse, für welche Bohrprofile gesucht werden sollen. Format: "Strasse Hausnummer, Ort"
+        egrid (str): E-GRID, für welcher Bohrprofile gesucht werden sollen. 
     Returns:
         list: Eine Liste mit Dictionaries, die die gefundenen Bohrprofile inkl. Link auf das PDF des Bohrprofils enthält.
     """
-    egrid = get_egrid_from_address(adresse)
     con = duckdb.connect()
     con.install_extension("spatial")
     con.load_extension("spatial")
