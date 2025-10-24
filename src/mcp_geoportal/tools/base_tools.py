@@ -1,21 +1,47 @@
 import re
 from typing import Union
+from pydantic import BaseModel, Field
 
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.session import ServerSession
+
 
 # Constants
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
 OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
+#class AlternativeGemeinde(BaseModel):
+    # """Schema for collecting user preferences."""
 
+    # checkAlternative: bool = Field(description="Möchtest du diese Gemeinde wählen?")
+    # alternativeDate: str = Field(
+        # default=None,
+        # description="Gemeindename",
+    # )
+
+# async def basic_elicitation_handler(message: str, response_type: type, params, context):
+    # print(f"Server asks: {message}")
+    
+    # # Simple text input for demonstration
+    # user_response = input("Welche Gemeinde ist gemeint?")
+    
+    # if not user_response:
+        # # For non-acceptance, use ElicitResult explicitly
+        # return ElicitResult(action="decline")
+    
+    # # Use the response_type dataclass to create a properly structured response
+    # # FastMCP handles the conversion from JSON schema to Python type
+    # # Return data directly - FastMCP will implicitly accept the elicitation
+    # return response_type(value=user_response)
 
 def register_base_tools(server: FastMCP):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der base-tools."
     @server.tool(
-        description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde."
+            name="Suche_BFSNR_zu_Gemeinde",
+            description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde."
     )
-    async def get_bfsnr_for_gemeinde(searchtext: str) ->  Union[float, dict]:
+    async def get_bfsnr_for_gemeinde(searchtext: str, ctx: Context[ServerSession, None]) ->  Union[float, dict]:
         """
         Args:
             searchtext (str): Suchtext mit dem nach der BFS-Nummer gesucht wird (Format: Gemeindename).
@@ -36,13 +62,21 @@ def register_base_tools(server: FastMCP):
             adresslist = []
             for gemeinde in js:
                 adresslist.append(gemeinde['label'])
+             # # Date unavailable - ask user for alternative
+            # result = await ctx.elicit(
+                # message=(f"Mehrdeutiger oder unpräziser Gemeindename. Meinten Sie {adresslist[0]}?"),
+                # schema=AlternativeGemeinde,
+            # )
+            # if result.action == "accept" and result.data:
+                # if result.data.checkAlternative:
+                    # return f"[SUCCESS] Booked for {result.data.alternativeDate}"
             return {
                 "hinweis": "Mehrdeutiger oder unpräziser Gemeindename. Bitte wähle eine der folgenden Gemeinden:",
                 "optionen": adresslist
             }
         
     @server.tool(
-        name="address_to_egrid",
+        name="Suche_EGRID",
         description="""Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator) 
         sowie die X- und Y-Koordinate zurück."""
     )

@@ -45,7 +45,13 @@ def register_gp_tools(server: FastMCP):
         Args:
             egrid (str): E-GRID, für welcher Bohrprofile gesucht werden sollen.
         Returns:
-            list: Eine Liste mit Dictionaries, die die gefundenen Bohrprofile inkl. Link auf das PDF des Bohrprofils enthält."""
+            list[dict]: Eine Liste mit einem Dictionary pro gefundenem Bohrprofil. Jeder Dictionary hat 5 Keys:
+                        - Sondiertyp: Sondiertyp
+                        - Sondierdatum: Datum der Sondierung
+                        - Sondiertiefe: Tiefe der Sondierung
+                        - Entfernung: Distanz des Sondierungsstandort zum Grundstück (E-GRID)
+                        - pdf_link: Link auf das Bohrprofil-PDF
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
     )
     async def get_bohrprofile_for_egrid(egrid: str) -> dict:
         """
@@ -56,7 +62,7 @@ def register_gp_tools(server: FastMCP):
         con.load_extension("spatial")
         spatial_sql = f"""
                         select
-                        typt_sondtyp_de as Sondiertyp, sond_datum as Sondierdatum, sond_tiefe as Sondiertiefe, url as pdf_link
+                        typt_sondtyp_de as Sondiertyp, sond_datum as Sondierdatum, sond_tiefe as Sondiertiefe, round(ST_Distance(lif.geometry, gef.geometry)) as Entfernung, url as pdf_link
                         from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                         join 'https://geofiles.be.ch/geoportal/pub/download/GEOSOND/geosond_geosond.parquet' gef on ST_Intersects(lif.geometry, ST_Buffer(gef.geometry, 300))
                         where 
@@ -67,7 +73,9 @@ def register_gp_tools(server: FastMCP):
         columns = [desc[0] for desc in con.description]
         dicts = [dict(zip(columns, row)) for row in results]
 
-        return dicts
+        map_link = get_map_link("get_bohrprofile_for_egrid", {"egrid": egrid})
+
+        return dicts, map_link
 
 
     # NATGEFKA
@@ -75,10 +83,11 @@ def register_gp_tools(server: FastMCP):
             name="Zaehle_Gebaeude_Gefahrenzone",
             description="""Ermittelt für alle Gemeinden des Kantons Bern, wieviele Gebäude in der Naturgefahrenkarte in einer Zone mit erheblicher Gefährdung liegen.
             Returns:
-            list[dict]: Eine Liste mit einem Dictionary pro Gemeinde. Jeder Dictionary hat drei Keys:
+                list[dict]: Eine Liste mit einem Dictionary pro Gemeinde. Jeder Dictionary hat drei Keys:
                         - bfsnr: BFS-Nummer der Gemeinde
                         - gemname: Name der Gemeinde
-                        - anzahl_gebaeude_in_roter_zone: Anzahl der Gebäude, die in der Naturgefahrenkarte in der Zone mit erheblicher Gefährdung liegen."""
+                        - anzahl_gebaeude_in_roter_zone: Anzahl der Gebäude, die in der Naturgefahrenkarte in der Zone mit erheblicher Gefährdung liegen.
+                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
     )
     async def get_gebaeude_in_rote_zonen() -> list[dict]:
         """
@@ -91,8 +100,8 @@ def register_gp_tools(server: FastMCP):
         spatial_sql = """
                         select
                         bbf.bfsnr,
-                        gde.gemname,
-                        count(gef.objectid)
+                        gde.gemname as gemeindename,
+                        count(gef.objectid) as anzahl_gebaeude_in_roter_zone
                         from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_bbf.parquet' bbf
                         join 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde on bbf.bfsnr = gde.bfsnr
                         join 'https://geofiles.be.ch/geoportal/pub/download/NATGEFKA/natgefka_sygefgeb.parquet' gef on ST_Intersects(bbf.geometry, gef.geometry)
@@ -104,17 +113,13 @@ def register_gp_tools(server: FastMCP):
                     """
 
         con.execute(spatial_sql)
-        result_list = []
         results = con.fetchall()
-        for gemeinde in results:
-            result_dict = {
-                "bfsnr": gemeinde[0],
-                "gemeindename": gemeinde[1],
-                "anzahl_gebaeude_in_roter_zone": gemeinde[2],
-            }
-            result_list.append(result_dict)
+        columns = [desc[0] for desc in con.description]
+        result_list = [dict(zip(columns, row)) for row in results]
 
-        return result_list
+        #map_link = get_map_link("get_gebaeude_in_rote_zonen", {"layers": "NATGEFKA_SYGEFGEB_KMGDM1"})
+        
+        return result_list#, map_link
 
     @server.tool(
             name="Hole_Naturgefahreninfo_zu_EGRID",
@@ -122,7 +127,8 @@ def register_gp_tools(server: FastMCP):
             Args:
                 egrid (str): E-GRID für den die Naturgefahren ermittelt werden sollen.
             Returns:
-                dict, str: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}, Link zur Kartenansicht im Geoportal des Kantons Bern."""
+                dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
+                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
     )
     async def get_naturgefahren_for_egrid(egrid: str) -> dict:
         """
