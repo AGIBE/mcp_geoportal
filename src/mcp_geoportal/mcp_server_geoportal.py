@@ -9,10 +9,11 @@ import httpx
 import uvicorn
 from mcp.server.fastmcp import FastMCP
 from tools.base_tools import register_base_tools
+from tools.create_map_link import get_map_link
 
-#mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
+# mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
 mcp = FastMCP("Geoportal des Kantons Bern")
-#app = mcp.streamable_http_app()
+# app = mcp.streamable_http_app()
 
 # Constants
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
@@ -134,14 +135,13 @@ def get_gebaeude_in_rote_zonen() -> list[dict]:
 
 
 @mcp.tool()
-def get_naturgefahren_for_address(adresse: str) -> dict:
+def get_naturgefahren_for_egrid(egrid: str) -> dict:
     """Ermittelt für eine Adresse (Strasse Hausnummer, Ort) die Naturgefahrestufe pro Gefahr (Einsturz/Absenkung, Wasser, Sturz, Lawine, Rutschung).
     Args:
-        adresse (str): Adresse, für die die Naturgefahren ermittelt werden sollen. Format: "Strasse Hausnummer, Ort"
+        egrid (str): E-GRID für den die Naturgefahren ermittelt werden sollen.
     Returns:
-        dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}
+        dict, str: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}, Link zur Kartenansicht im Geoportal des Kantons Bern.
     """
-    egrid = get_egrid_from_address(adresse)
     con = duckdb.connect()
     con.install_extension("spatial")
     con.load_extension("spatial")
@@ -170,7 +170,8 @@ def get_naturgefahren_for_address(adresse: str) -> dict:
     mapped_result_dict = {
         k: get_gefahrenstufe_mapped(v) for k, v in result_dict.items()
     }
-    return mapped_result_dict
+    map_link = get_map_link("get_naturgefahren_for_address", {"egrid": egrid})
+    return mapped_result_dict, map_link
 
 
 def get_gefahrenstufe_mapped(value: int) -> str:
@@ -194,12 +195,12 @@ def get_gefahrenstufe_mapped(value: int) -> str:
 
 @mcp.tool(
     name="get_bohrprofile",
-    description="""Gibt die Bohrprofile (gemäss Geoprodukt GEOSOND) im Umkreis von 300m um den eingegebenen E-GRID zurück."""
+    description="""Gibt die Bohrprofile (gemäss Geoprodukt GEOSOND) im Umkreis von 300m um den eingegebenen E-GRID zurück.""",
 )
-def get_bohrprofile_for_address(egrid: str) -> dict:
+def get_bohrprofile_for_egrid(egrid: str) -> dict:
     """
     Args:
-        egrid (str): E-GRID, für welcher Bohrprofile gesucht werden sollen. 
+        egrid (str): E-GRID, für welcher Bohrprofile gesucht werden sollen.
     Returns:
         list: Eine Liste mit Dictionaries, die die gefundenen Bohrprofile inkl. Link auf das PDF des Bohrprofils enthält.
     """
@@ -218,7 +219,7 @@ def get_bohrprofile_for_address(egrid: str) -> dict:
     results = con.fetchall()
     columns = [desc[0] for desc in con.description]
     dicts = [dict(zip(columns, row)) for row in results]
-    
+
     return dicts
 
 
@@ -241,7 +242,7 @@ def get_gemeinde_infos() -> list[dict]:
     results = con.fetchall()
     columns = [desc[0] for desc in con.description]
     dicts = [dict(zip(columns, row)) for row in results]
-    
+
     return dicts
 
 
@@ -252,16 +253,18 @@ if __name__ == "__main__":
         choices=["stdio", "http"],
         default="stdio",
         help="Server-Modus: stdio (lokal) oder http (remote)",
-        required=False
+        required=False,
     )
 
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
     if args.mode == "stdio":
-        mcp.run(transport='stdio')
+        mcp.run(transport="stdio")
     else:
         app = mcp.streamable_http_app()
-        config = uvicorn.Config(app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300)
+        config = uvicorn.Config(
+            app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300
+        )
         server = uvicorn.Server(config)
         server.run()
         # uvicorn.run(
