@@ -170,7 +170,7 @@ def get_naturgefahren_for_egrid(egrid: str) -> dict:
     mapped_result_dict = {
         k: get_gefahrenstufe_mapped(v) for k, v in result_dict.items()
     }
-    map_link = get_map_link("get_naturgefahren_for_address", {"egrid": egrid})
+    map_link = get_map_link("get_naturgefahren_for_egrid", {"egrid": egrid})
     return mapped_result_dict, map_link
 
 
