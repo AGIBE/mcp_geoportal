@@ -10,6 +10,7 @@ import uvicorn
 from mcp.server.fastmcp import FastMCP
 from tools.base_tools import register_base_tools
 from tools.create_map_link import get_map_link
+from tools.oereb_tools import register_oereb_tools
 
 # mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
 mcp = FastMCP("Geoportal des Kantons Bern")
@@ -21,6 +22,7 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 # Registriere alle Tools
 register_base_tools(mcp)
+register_oereb_tools(mcp)
 
 
 @mcp.tool()
@@ -40,55 +42,6 @@ def get_geoproducts() -> list[dict]:
         result_list.append(gpr_dict)
 
     return result_list
-
-
-@mcp.tool()
-def get_oereb_themes() -> dict[str, str]:
-    """Frage im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab."""
-    url = f"{OEREB_API_BASE}/capabilities/json"
-    result = httpx.get(url)
-    result_dict = {}
-    js = result.json()
-    for theme in js["GetCapabilitiesResponse"]["topic"]:
-        code = theme["Code"]
-        name = ""
-        for lang in theme["Text"]:
-            if lang["Language"] == "de":
-                name = lang["Text"]
-                break
-        result_dict[code] = name
-
-    return result_dict
-
-
-@mcp.tool()
-def get_oereb_auszug(egrid: str) -> str:
-    """Erstelle für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und lies alle vorhandenen Eigentumsbeschränkungen aus.
-
-    Args:
-        egrid: Eidgenössischer Grundstück-Identifikator. Beginnt mit "CH".
-
-    """
-    url = f"{OEREB_API_BASE}/extract/xml?egrid={egrid}&lang=de"
-    result = httpx.get(url)
-    return result.text
-
-
-@mcp.tool()
-def get_oereb_auszug_for_address(searchtext: str) -> str:
-    """Ermittelt in einem ersten Schritt für die gesuchte Adresse den eidgenössischen Grundstück-Identifikator (EGRID).
-    Für diesen EGRID wird dann in einem zweiten Schritt ein Auszug aus dem Kataster der öffentlich-rechtlichen
-    Eigentumsbeschränkungen (ÖREB-Kataster) erstellt. Dessen Inhalt wird zurückgegeben.
-
-    Args:
-        searchtext (str): Suchtext mit dem nach der Adresse gesucht wird.
-
-    Returns:
-        list[str]: Liste der im Auszug enthaltenen Themen und deren Bezeichnung.
-    """
-    egrid = get_egrid_from_address(searchtext)
-    auszug = get_oereb_auszug(egrid)
-    return auszug
 
 
 @mcp.tool()
