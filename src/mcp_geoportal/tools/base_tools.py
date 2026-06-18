@@ -36,6 +36,9 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
     # return response_type(value=user_response)
 
 def register_base_tools(server: FastMCP):
+    # TODO Basisfunktionen ausbauen
+    # TODO: z.B. Von Koordinate zu Gemeinde / EGRID
+    # TODO: von einer Parzellennummer zu EGRID
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der base-tools."
     @server.tool(
             name="Suche_BFSNR_zu_Gemeinde",

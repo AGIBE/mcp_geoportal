@@ -11,6 +11,9 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 def register_gp_tools(server: FastMCP):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der gp-tools."
+    # TODO: AED-Standort: Wo sind die nächste AED-Standort?
+    # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen?
+    # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
     # ADMGDE
     @server.tool(
             name="Hole_Gemeindeinfos",
