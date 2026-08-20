@@ -16,31 +16,31 @@ def register_gp_tools(server: FastMCP):
     # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
     # ADMGDE
     @server.tool(
-            name="Hole_Gemeindeinfos",
-            description="""Ermittelt für alle Gemeinden im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha.
+            name="Hole_Gemeindeinfos_zu_BFSNummer",
+            description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha.
             Returns:
                 list: Eine Liste mit Dictionaries, die pro Gemeinde die Informationen zurückgibt."""
     )
-    async def get_gemeinde_infos() -> list[dict]:
+    async def get_gemeinde_infos(bfs_nr:int) -> dict:
         """
         ADMGDE_GDEDAT
         """
         con = duckdb.connect()
         con.install_extension("spatial")
         con.load_extension("spatial")
-        spatial_sql = """
+        spatial_sql = f"""
                         select
-                        bfsnr, gemname AS Gemeindename, espop AS Einwohnerzahl, espop_gmfl AS "Bevölkerungsdichte pro ha", gmdflaeche AS "Gemeindefläche in ha", url AS Website
+                        espop AS Einwohnerzahl, espop_gmfl AS "Bevölkerungsdichte pro ha", gmdflaeche AS "Gemeindefläche in ha", url AS Website
                         from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet'
+                        where bfsnr = {bfs_nr}
                     """
         con.execute(spatial_sql)
-        results = con.fetchall()
+        row = con.fetchone()
+        if row is None:
+            return {}
         columns = [desc[0] for desc in con.description]
-        dicts = [dict(zip(columns, row)) for row in results]
+        return dict(zip(columns, row))
 
-        return dicts
-    
-    
     # GEOSOND
     @server.tool(
         name="Hole_Bohrprofile_zu_EGRID",
@@ -68,7 +68,7 @@ def register_gp_tools(server: FastMCP):
                         typt_sondtyp_de as Sondiertyp, sond_datum as Sondierdatum, sond_tiefe as Sondiertiefe, round(ST_Distance(lif.geometry, gef.geometry)) as Entfernung, url as pdf_link
                         from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                         join 'https://geofiles.be.ch/geoportal/pub/download/GEOSOND/geosond_geosond.parquet' gef on ST_Intersects(lif.geometry, ST_Buffer(gef.geometry, 300))
-                        where 
+                        where
                         lif.egrid = '{egrid}'
                     """
         con.execute(spatial_sql)
@@ -79,50 +79,6 @@ def register_gp_tools(server: FastMCP):
         map_link = get_map_link("get_bohrprofile_for_egrid", {"egrid": egrid})
 
         return dicts, map_link
-
-
-    # NATGEFKA
-    @server.tool(
-            name="Zaehle_Gebaeude_Gefahrenzone",
-            description="""Ermittelt für alle Gemeinden des Kantons Bern, wieviele Gebäude in der Naturgefahrenkarte in einer Zone mit erheblicher Gefährdung liegen.
-            Returns:
-                list[dict]: Eine Liste mit einem Dictionary pro Gemeinde. Jeder Dictionary hat drei Keys:
-                        - bfsnr: BFS-Nummer der Gemeinde
-                        - gemname: Name der Gemeinde
-                        - anzahl_gebaeude_in_roter_zone: Anzahl der Gebäude, die in der Naturgefahrenkarte in der Zone mit erheblicher Gefährdung liegen.
-                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
-    )
-    async def get_gebaeude_in_rote_zonen() -> list[dict]:
-        """
-        NATGEFKA_SYGEFGEB
-        """
-        con = duckdb.connect()
-        con.install_extension("spatial")
-        con.load_extension("spatial")
-
-        spatial_sql = """
-                        select
-                        bbf.bfsnr,
-                        gde.gemname as gemeindename,
-                        count(gef.objectid) as anzahl_gebaeude_in_roter_zone
-                        from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_bbf.parquet' bbf
-                        join 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde on bbf.bfsnr = gde.bfsnr
-                        join 'https://geofiles.be.ch/geoportal/pub/download/NATGEFKA/natgefka_sygefgeb.parquet' gef on ST_Intersects(bbf.geometry, gef.geometry)
-                        where
-                        bbf.bbartt_bez_de = 'Gebäude'
-                        and gef.max_gefstu = 4
-                        group by bbf.bfsnr, gde.gemname
-                        order by gde.gemname
-                    """
-
-        con.execute(spatial_sql)
-        results = con.fetchall()
-        columns = [desc[0] for desc in con.description]
-        result_list = [dict(zip(columns, row)) for row in results]
-
-        #map_link = get_map_link("get_gebaeude_in_rote_zonen", {"layers": "NATGEFKA_SYGEFGEB_KMGDM1"})
-        
-        return result_list#, map_link
 
     @server.tool(
             name="Hole_Naturgefahreninfo_zu_EGRID",
