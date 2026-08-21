@@ -17,9 +17,9 @@ def register_gp_tools(server: FastMCP):
     # ADMGDE
     @server.tool(
             name="Hole_Gemeindeinfos_zu_BFSNummer",
-            description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha.
+            description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha und Steueranlage.
             Returns:
-                list: Eine Liste mit Dictionaries, die pro Gemeinde die Informationen zurückgibt."""
+                list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt."""
     )
     async def get_gemeinde_infos(bfs_nr:int) -> dict:
         """
@@ -30,8 +30,9 @@ def register_gp_tools(server: FastMCP):
         con.load_extension("spatial")
         spatial_sql = f"""
                         select
-                        espop AS Einwohnerzahl, espop_gmfl AS "Bevölkerungsdichte pro ha", gmdflaeche AS "Gemeindefläche in ha", url AS Website
-                        from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet'
+                        gde.espop AS Einwohnerzahl, gde.espop_gmfl AS "Bevölkerungsdichte pro ha", gde.gmdflaeche AS "Gemeindefläche in ha", ste.steuanlg as Steueranalge, gde.url AS Website
+                        from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
+                        join 'https://geofiles.be.ch/geoportal/pub/download/NATGEFKA/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
                         where bfsnr = {bfs_nr}
                     """
         con.execute(spatial_sql)
@@ -75,9 +76,7 @@ def register_gp_tools(server: FastMCP):
         results = con.fetchall()
         columns = [desc[0] for desc in con.description]
         dicts = [dict(zip(columns, row)) for row in results]
-
         map_link = get_map_link("get_bohrprofile_for_egrid", {"egrid": egrid})
-
         return dicts, map_link
 
     @server.tool(
@@ -142,3 +141,32 @@ def register_gp_tools(server: FastMCP):
             4: "erhebliche Gefahr",
         }
         return mapping.get(value, "unbekannte Gefahrenstufe")
+
+    # Grundstücksinfos
+    @server.tool(
+            name="Hole_Grundstueck_Info",
+            description="""Ermittelt die verfügbaren Grundstücksdaten ohne Eigentumsauskunft.
+            Returns:
+                dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
+                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
+    )
+    async def get_property_info_for_egrid(egrid: str) -> dict:
+        """
+        DIPANU_DIPANUF
+        """
+        con = duckdb.connect()
+        con.install_extension("spatial")
+        con.load_extension("spatial")
+        spatial_sql = f"""
+                        select
+                        dp.gstnr as Grundstücksnummer, dp.gstbez as Grundstückbezeichnung, dp.gbflae as Grundstücksfläche, dp.gstartt_gstart_de as Grundstückart_deutsch, dp.gstartt_gstart_fr as Grundstückart_französisch
+                        from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/dipanu_dipanuf.parquet' dp
+                        where egrid = '{egrid}'
+                    """
+        con.execute(spatial_sql)
+        row = con.fetchone()
+        if row is None:
+            return {}
+        columns = [desc[0] for desc in con.description]
+        map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
+        return dict(zip(columns, row)), map_link

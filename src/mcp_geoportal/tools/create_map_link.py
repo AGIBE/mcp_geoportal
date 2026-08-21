@@ -30,16 +30,17 @@ def get_map_link(name_function: str, params: dict ) -> str:
         lang = params.get("lang", "de")
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=NATGEFKA_GEFGEB_KMGDM3&legend=True"
 
-    if name_function == "get_gebaeude_in_rote_zonen":
-        layers = params.get("layers", "NATGEFKA_SYGEFGEB_KMGDM1")
-        lang = params.get("lang", "de")
-        url = f"addcrosshair=false&lang={lang}&layers={layers}&legend=True"
-
     if name_function == "get_bohrprofile_for_egrid":
         egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
         scale = params.get("scale", 1000)
         lang = params.get("lang", "de")
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=GEOSOND_GEOSOND_KMGDM1&legend=True"
+
+    if name_function == "get_property_info_for_egrid":
+        egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
+        scale = params.get("scale", 1000)
+        lang = params.get("lang", "de")
+        url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}"
 
     full_url = base_url + url
     return full_url
