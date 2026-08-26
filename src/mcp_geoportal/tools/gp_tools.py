@@ -12,8 +12,14 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 def register_gp_tools(server: FastMCP):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der gp-tools."
     # TODO: AED-Standort: Wo sind die nächste AED-Standort?
-    # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen?
     # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
+    # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen? - Geschütztes Geoprodukt (kein Parquet-File vorhanden)
+    # TODO: Freies Übernachten/Biwakieren (z.B. darf ich am Hinterburgseeli biwakieren)?
+    # TODO: Suchdienst für Orts-, Flur- und Geländenamen (liefert Koordinaten zurück) - Suchfunktion Geodat-Tools
+    # TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück) - z.B. wo ist das Rütihubelbad?
+    # TODO: Abfragen von Erdbebenzonen für EGRID (WMS der swisstopo mit getFeatureInfo auf https://wms.geo.admin.ch) -> evtl. Anreichern bei Naturgefahrenabfrage
+    # TODO: Abragen aktueller Messdaten von Oberflächengewässern oder Luftqualität (klären, ob es API auf Messnetze gibt)
+    # TODO: Rutschgebiete der AV (noch keine Geodaten)
     # ADMGDE
     @server.tool(
             name="Hole_Gemeindeinfos_zu_BFSNummer",
