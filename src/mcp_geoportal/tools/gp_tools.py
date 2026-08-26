@@ -30,10 +30,10 @@ def register_gp_tools(server: FastMCP):
         con.load_extension("spatial")
         spatial_sql = f"""
                         select
-                        gde.espop AS Einwohnerzahl, gde.espop_gmfl AS "Bevölkerungsdichte pro ha", gde.gmdflaeche AS "Gemeindefläche in ha", ste.steuanlg as Steueranalge, gde.url AS Website
+                        gde.espop AS Einwohnerzahl, gde.espop_gmfl AS "Bevölkerungsdichte pro ha", gde.gmdflaeche AS "Gemeindefläche in ha", ste.steuanlg as Steueranlage, gde.url AS Website
                         from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
-                        join 'https://geofiles.be.ch/geoportal/pub/download/NATGEFKA/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
-                        where bfsnr = {bfs_nr}
+                        join 'https://geofiles.be.ch/geoportal/pub/download/STEUERN/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
+                        where gde.bfsnr = {bfs_nr}
                     """
         con.execute(spatial_sql)
         row = con.fetchone()
@@ -160,7 +160,7 @@ def register_gp_tools(server: FastMCP):
         spatial_sql = f"""
                         select
                         dp.gstnr as Grundstücksnummer, dp.gstbez as Grundstückbezeichnung, dp.gbflae as Grundstücksfläche, dp.gstartt_gstart_de as Grundstückart_deutsch, dp.gstartt_gstart_fr as Grundstückart_französisch
-                        from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/dipanu_dipanuf.parquet' dp
+                        from 'https://geofiles.be.ch/geoportal/pub/download/DIPANU/dipanu_dipanuf.parquet' dp
                         where egrid = '{egrid}'
                     """
         con.execute(spatial_sql)
