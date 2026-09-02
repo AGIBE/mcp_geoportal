@@ -8,7 +8,7 @@
 """Erstelle einen Link zu einer Karte im Geoportal des Kantons Bern mit vordefinierten Parametern."""
 
 
-def get_map_link(name_function: str, params: dict ) -> str:
+def get_map_link(name_function: str, params: dict) -> str:
     """Erstelle einen Link zu einer Karte im Geoportal des Kantons Bern mit vordefinierten Parametern.
 
     Args:

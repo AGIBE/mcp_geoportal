@@ -11,6 +11,7 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 def register_gp_tools(server: MCPServer):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der gp-tools."
+
     # TODO: AED-Standort: Wo sind die nächste AED-Standort?
     # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
     # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen? - Geschütztes Geoprodukt (kein Parquet-File vorhanden)
@@ -23,12 +24,12 @@ def register_gp_tools(server: MCPServer):
     # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
     # ADMGDE
     @server.tool(
-            name="Hole_Gemeindeinfos_zu_BFSNummer",
-            description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha und Steueranlage.
+        name="Hole_Gemeindeinfos_zu_BFSNummer",
+        description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha und Steueranlage.
             Returns:
-                list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt."""
+                list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
     )
-    async def get_gemeinde_infos(bfs_nr:int) -> dict:
+    async def get_gemeinde_infos(bfs_nr: int) -> dict:
         """
         ADMGDE_GDEDAT
         """
@@ -62,7 +63,7 @@ def register_gp_tools(server: MCPServer):
                         - Sondiertiefe: Tiefe der Sondierung
                         - Entfernung: Distanz des Sondierungsstandort zum Grundstück (E-GRID)
                         - pdf_link: Link auf das Bohrprofil-PDF
-            str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
     )
     async def get_bohrprofile_for_egrid(egrid: str) -> dict:
         """
@@ -87,13 +88,13 @@ def register_gp_tools(server: MCPServer):
         return dicts, map_link
 
     @server.tool(
-            name="Hole_Naturgefahreninfo_zu_EGRID",
-            description="""Ermittelt für eine Adresse (Strasse Hausnummer, Ort) die Naturgefahrestufe pro Gefahr (Einsturz/Absenkung, Wasser, Sturz, Lawine, Rutschung).
+        name="Hole_Naturgefahreninfo_zu_EGRID",
+        description="""Ermittelt für eine Adresse (Strasse Hausnummer, Ort) die Naturgefahrestufe pro Gefahr (Einsturz/Absenkung, Wasser, Sturz, Lawine, Rutschung).
             Args:
                 egrid (str): E-GRID für den die Naturgefahren ermittelt werden sollen.
             Returns:
                 dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
-                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
+                str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
     )
     async def get_naturgefahren_for_egrid(egrid: str) -> dict:
         """
@@ -130,7 +131,6 @@ def register_gp_tools(server: MCPServer):
         map_link = get_map_link("get_naturgefahren_for_egrid", {"egrid": egrid})
         return mapped_result_dict, map_link
 
-
     def get_gefahrenstufe_mapped(value: int) -> str:
         """Mappt die Gefahrenstufe auf eine lesbare Bezeichnung.
 
@@ -151,11 +151,11 @@ def register_gp_tools(server: MCPServer):
 
     # Grundstücksinfos
     @server.tool(
-            name="Hole_Grundstueck_Info",
-            description="""Ermittelt die verfügbaren Grundstücksdaten ohne Eigentumsauskunft.
+        name="Hole_Grundstueck_Info",
+        description="""Ermittelt die verfügbaren Grundstücksdaten ohne Eigentumsauskunft.
             Returns:
                 dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
-                str: Link zur Kartenansicht im Geoportal des Kantons Bern."""
+                str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
     )
     async def get_property_info_for_egrid(egrid: str) -> dict:
         """

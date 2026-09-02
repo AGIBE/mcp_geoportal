@@ -10,8 +10,9 @@ from tools.gp_tools import register_gp_tools
 from tools.oereb_tools import register_oereb_tools
 
 # Server-Instanz
-mcp = MCPServer("Geoportal des Kantons Bern",
-                )
+mcp = MCPServer(
+    "Geoportal des Kantons Bern",
+)
 
 # Logging initialisieren
 logger = logging.getLogger(__name__)
@@ -64,10 +65,17 @@ if __name__ == "__main__":
         # kann mit allow_hosts / allowed_origins gesteuert
         # werden, wer auf den MCP-Server zugreifen darf.
         app = mcp.streamable_http_app(
-            transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)
+            transport_security=TransportSecuritySettings(
+                enable_dns_rebinding_protection=False
+            )
         )
         config = uvicorn.Config(
-            app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300, access_log=True
+            app,
+            host="0.0.0.0",
+            port=6789,
+            workers=2,
+            timeout_keep_alive=300,
+            access_log=True,
         )
         server = uvicorn.Server(config)
         server.run()

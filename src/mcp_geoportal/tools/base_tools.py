@@ -12,40 +12,44 @@ from mcp.server.session import ServerSession
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
 OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
-#class AlternativeGemeinde(BaseModel):
-    # """Schema for collecting user preferences."""
+# class AlternativeGemeinde(BaseModel):
+# """Schema for collecting user preferences."""
 
-    # checkAlternative: bool = Field(description="Möchtest du diese Gemeinde wählen?")
-    # alternativeDate: str = Field(
-        # default=None,
-        # description="Gemeindename",
-    # )
+# checkAlternative: bool = Field(description="Möchtest du diese Gemeinde wählen?")
+# alternativeDate: str = Field(
+# default=None,
+# description="Gemeindename",
+# )
 
 # async def basic_elicitation_handler(message: str, response_type: type, params, context):
-    # print(f"Server asks: {message}")
+# print(f"Server asks: {message}")
 
-    # # Simple text input for demonstration
-    # user_response = input("Welche Gemeinde ist gemeint?")
+# # Simple text input for demonstration
+# user_response = input("Welche Gemeinde ist gemeint?")
 
-    # if not user_response:
-        # # For non-acceptance, use ElicitResult explicitly
-        # return ElicitResult(action="decline")
+# if not user_response:
+# # For non-acceptance, use ElicitResult explicitly
+# return ElicitResult(action="decline")
 
-    # # Use the response_type dataclass to create a properly structured response
-    # # MCPServer handles the conversion from JSON schema to Python type
-    # # Return data directly - MCPServer will implicitly accept the elicitation
-    # return response_type(value=user_response)
+# # Use the response_type dataclass to create a properly structured response
+# # MCPServer handles the conversion from JSON schema to Python type
+# # Return data directly - MCPServer will implicitly accept the elicitation
+# return response_type(value=user_response)
+
 
 def register_base_tools(server: MCPServer):
     # TODO Basisfunktionen ausbauen
     # TODO: z.B. Von Koordinate zu Gemeinde / EGRID
     # TODO: von einer Parzellennummer zu EGRID
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der base-tools."
+
     @server.tool(
-            name="Suche_BFSNR_zu_Gemeinde",
-            description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde."
+        name="Suche_BFSNR_zu_Gemeinde",
+        description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
     )
-    async def get_bfsnr_for_gemeinde(searchtext: str, ctx: Context[ServerSession, None]) ->  Union[float, dict]:
+    async def get_bfsnr_for_gemeinde(
+        searchtext: str, ctx: Context[ServerSession, None]
+    ) -> Union[float, dict]:
         """
         Args:
             searchtext (str): Suchtext mit dem nach der BFS-Nummer gesucht wird (Format: Gemeindename).
@@ -56,35 +60,37 @@ def register_base_tools(server: MCPServer):
         params = {"searchtext": searchtext, "origins": "grenz5"}
         result = httpx.get(url_search, params=params)
         js = result.json()
-        result_ohnebfs = (re.sub(r'\s\d+', '', js[0]['label'])).lower()
+        result_ohnebfs = (re.sub(r"\s\d+", "", js[0]["label"])).lower()
         if len(js) == 1 or (result_ohnebfs == searchtext.lower()):
             # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
-            bfsnr = int((re.findall(r'\s\d+', js[0]['label'])[0]).strip())
+            bfsnr = int((re.findall(r"\s\d+", js[0]["label"])[0]).strip())
 
             return bfsnr
         else:
             adresslist = []
             for gemeinde in js:
-                adresslist.append(gemeinde['label'])
-             # # Date unavailable - ask user for alternative
+                adresslist.append(gemeinde["label"])
+            # # Date unavailable - ask user for alternative
             # result = await ctx.elicit(
-                # message=(f"Mehrdeutiger oder unpräziser Gemeindename. Meinten Sie {adresslist[0]}?"),
-                # schema=AlternativeGemeinde,
+            # message=(f"Mehrdeutiger oder unpräziser Gemeindename. Meinten Sie {adresslist[0]}?"),
+            # schema=AlternativeGemeinde,
             # )
             # if result.action == "accept" and result.data:
-                # if result.data.checkAlternative:
-                    # return f"[SUCCESS] Booked for {result.data.alternativeDate}"
+            # if result.data.checkAlternative:
+            # return f"[SUCCESS] Booked for {result.data.alternativeDate}"
             return {
                 "hinweis": "Mehrdeutiger oder unpräziser Gemeindename. Bitte wähle eine der folgenden Gemeinden:",
-                "optionen": adresslist
+                "optionen": adresslist,
             }
 
     @server.tool(
         name="Suche_EGRID_fuer_Adresse",
         description="""Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator)
-        sowie die X- und Y-Koordinate zurück."""
+        sowie die X- und Y-Koordinate zurück.""",
     )
-    async def get_egrid_from_address(searchtext: str) ->  Union[dict[str, float, float], dict]:
+    async def get_egrid_from_address(
+        searchtext: str,
+    ) -> Union[dict[str, float, float], dict]:
         """
         Args:
             searchtext (str): Suchtext mit dem nach der Adresse gesucht wird (Format: Strasse Nr., Gemeinde).
@@ -99,8 +105,8 @@ def register_base_tools(server: MCPServer):
         params = {"searchtext": searchtext}
         result = httpx.get(url_search, params=params)
         js = result.json()
-        result_ohneplz = (re.sub(r'\b\d{4}\b\s*', '', js[0]['label'])).lower()
-        if result_ohneplz == searchtext.replace(',','').lower():
+        result_ohneplz = (re.sub(r"\b\d{4}\b\s*", "", js[0]["label"])).lower()
+        if result_ohneplz == searchtext.replace(",", "").lower():
             # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
             x = js[0]["x"]
             y = js[0]["y"]
@@ -109,15 +115,13 @@ def register_base_tools(server: MCPServer):
             result = httpx.get(url_oereb)
             js = result.json()
             egrid = js["GetEGRIDResponse"][0]["egrid"]
-            #return egrid
-            return {'egrid': egrid,
-            'x': x,
-            'y': y}
+            # return egrid
+            return {"egrid": egrid, "x": x, "y": y}
         else:
             adresslist = []
             for adresse in js:
-                adresslist.append(adresse['label'])
+                adresslist.append(adresse["label"])
             return {
                 "hinweis": "Mehrdeutige oder unpräzise Adresse. Bitte wähle eine der folgenden Adressen:",
-                "optionen": adresslist
+                "optionen": adresslist,
             }
