@@ -4,12 +4,14 @@ import logging
 import httpx
 import uvicorn
 from mcp.server import MCPServer
+from mcp.server.transport_security import TransportSecuritySettings
 from tools.base_tools import register_base_tools
 from tools.gp_tools import register_gp_tools
 from tools.oereb_tools import register_oereb_tools
 
 # Server-Instanz
-mcp = MCPServer("Geoportal des Kantons Bern")
+mcp = MCPServer("Geoportal des Kantons Bern",
+                )
 
 # Logging initialisieren
 logger = logging.getLogger(__name__)
@@ -58,7 +60,9 @@ if __name__ == "__main__":
     if args.mode == "stdio":
         mcp.run(transport="stdio")
     else:
-        app = mcp.streamable_http_app()
+        app = mcp.streamable_http_app(
+            transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)
+        )
         config = uvicorn.Config(
             app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300
         )
