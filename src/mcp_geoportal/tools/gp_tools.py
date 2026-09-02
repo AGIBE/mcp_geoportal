@@ -4,12 +4,7 @@ import duckdb
 from mcp.server import MCPServer
 from tools.create_map_link import get_map_link
 
-# Constants
-MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
-OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
-
-
-def register_gp_tools(server: MCPServer):
+def register_gp_tools(server: MCPServer, api_definitions: dict):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der gp-tools."
 
     # TODO: AED-Standort: Wo sind die nächste AED-Standort?
@@ -39,8 +34,8 @@ def register_gp_tools(server: MCPServer):
         spatial_sql = f"""
                         select
                         gde.espop AS Einwohnerzahl, gde.espop_gmfl AS "Bevölkerungsdichte pro ha", gde.gmdflaeche AS "Gemeindefläche in ha", ste.steuanlg as Steueranlage, gde.url AS Website
-                        from 'https://geofiles.be.ch/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
-                        join 'https://geofiles.be.ch/geoportal/pub/download/STEUERN/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
+                        from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
+                        join '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/STEUERN/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
                         where gde.bfsnr = {bfs_nr}
                     """
         con.execute(spatial_sql)
@@ -75,8 +70,8 @@ def register_gp_tools(server: MCPServer):
         spatial_sql = f"""
                         select
                         typt_sondtyp_de as Sondiertyp, sond_datum as Sondierdatum, sond_tiefe as Sondiertiefe, round(ST_Distance(lif.geometry, gef.geometry)) as Entfernung, url as pdf_link
-                        from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
-                        join 'https://geofiles.be.ch/geoportal/pub/download/GEOSOND/geosond_geosond.parquet' gef on ST_Intersects(lif.geometry, ST_Buffer(gef.geometry, 300))
+                        from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
+                        join '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/GEOSOND/geosond_geosond.parquet' gef on ST_Intersects(lif.geometry, ST_Buffer(gef.geometry, 300))
                         where
                         lif.egrid = '{egrid}'
                     """
@@ -106,8 +101,8 @@ def register_gp_tools(server: MCPServer):
         spatial_sql = f"""
                         select
                         json_object('gefahr', gef.hprozt_hproz_de,'stufe', gef.gefstuf) AS gefahrenstufe
-                        from 'https://geofiles.be.ch/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
-                        join 'https://geofiles.be.ch/geoportal/pub/download/NATGEFKA/natgefka_gefgeb.parquet' gef on ST_Intersects(lif.geometry, gef.geometry)
+                        from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
+                        join '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/NATGEFKA/natgefka_gefgeb.parquet' gef on ST_Intersects(lif.geometry, gef.geometry)
                         where
                         lif.egrid = '{egrid}'
                     """
@@ -167,7 +162,7 @@ def register_gp_tools(server: MCPServer):
         spatial_sql = f"""
                         select
                         dp.gstnr as Grundstücksnummer, dp.gstbez as Grundstückbezeichnung, dp.gbflae as Grundstücksfläche, dp.gstartt_gstart_de as Grundstückart_deutsch, dp.gstartt_gstart_fr as Grundstückart_französisch
-                        from 'https://geofiles.be.ch/geoportal/pub/download/DIPANU/dipanu_dipanuf.parquet' dp
+                        from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/DIPANU/dipanu_dipanuf.parquet' dp
                         where egrid = '{egrid}'
                     """
         con.execute(spatial_sql)

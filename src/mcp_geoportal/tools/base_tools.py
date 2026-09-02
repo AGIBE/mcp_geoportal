@@ -7,11 +7,6 @@ from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
 from mcp.server.session import ServerSession
 
-
-# Constants
-MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
-OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
-
 # class AlternativeGemeinde(BaseModel):
 # """Schema for collecting user preferences."""
 
@@ -37,7 +32,7 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 # return response_type(value=user_response)
 
 
-def register_base_tools(server: MCPServer):
+def register_base_tools(server: MCPServer, api_definitions: dict):
     # TODO Basisfunktionen ausbauen
     # TODO: z.B. Von Koordinate zu Gemeinde / EGRID
     # TODO: von einer Parzellennummer zu EGRID
@@ -56,7 +51,7 @@ def register_base_tools(server: MCPServer):
         Returns:
             float: BFS-Nummer
         """
-        url_search = f"{MWH_API_BASE}/rpc/oereb_search"
+        url_search = f"{api_definitions['metawarehouse']['api_url']}/rpc/oereb_search"
         params = {"searchtext": searchtext, "origins": "grenz5"}
         result = httpx.get(url_search, params=params)
         js = result.json()
@@ -101,7 +96,7 @@ def register_base_tools(server: MCPServer):
                 - x: X-Koordinate der Adresse
                 - y: Y-Koordinate der Adresse
         """
-        url_search = f"{MWH_API_BASE}/rpc/oereb_search"
+        url_search = f"{api_definitions['metawarehouse']['api_url']}/rpc/oereb_search"
         params = {"searchtext": searchtext}
         result = httpx.get(url_search, params=params)
         js = result.json()
@@ -111,7 +106,7 @@ def register_base_tools(server: MCPServer):
             x = js[0]["x"]
             y = js[0]["y"]
 
-            url_oereb = f"{OEREB_API_BASE}/getegrid/json/?EN={x},{y}"
+            url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
             result = httpx.get(url_oereb)
             js = result.json()
             egrid = js["GetEGRIDResponse"][0]["egrid"]

@@ -1,12 +1,8 @@
 import httpx
 from mcp.server import MCPServer
 
-# Constants
-MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
-OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
-
-def register_oereb_tools(server: MCPServer):
+def register_oereb_tools(server: MCPServer, api_definitions: dict):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der oereb-tools."
 
     @server.tool(
@@ -15,7 +11,7 @@ def register_oereb_tools(server: MCPServer):
     )
     async def get_oereb_themes() -> dict[str, str]:
         """Frage im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab."""
-        url = f"{OEREB_API_BASE}/capabilities/json"
+        url = f"{api_definitions['oereb_server']['api_url']}/capabilities/json"
         result = httpx.get(url)
         result_dict = {}
         js = result.json()
@@ -42,7 +38,7 @@ def register_oereb_tools(server: MCPServer):
             egrid: Eidgenössischer Grundstück-Identifikator. Beginnt mit "CH".
 
         """
-        url = f"{OEREB_API_BASE}/extract/xml?egrid={egrid}&lang=de"
+        url = f"{api_definitions['oereb_server']['api_url']}/extract/xml?egrid={egrid}&lang=de"
         result = httpx.get(url)
         return result.text
 
