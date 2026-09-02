@@ -60,17 +60,14 @@ if __name__ == "__main__":
     if args.mode == "stdio":
         mcp.run(transport="stdio")
     else:
+        # Wenn enable_dns_rebinding_protection=True
+        # kann mit allow_hosts / allowed_origins gesteuert
+        # werden, wer auf den MCP-Server zugreifen darf.
         app = mcp.streamable_http_app(
             transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)
         )
         config = uvicorn.Config(
-            app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300
+            app, host="0.0.0.0", port=6789, workers=2, timeout_keep_alive=300, access_log=True
         )
         server = uvicorn.Server(config)
         server.run()
-        # uvicorn.run(
-        #     app,
-        #     host="0.0.0.0",
-        #     port=6789,
-        #     timeout_keep_alive=300
-        # )
