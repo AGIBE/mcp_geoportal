@@ -1,7 +1,7 @@
 import json
 
 import duckdb
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from tools.create_map_link import get_map_link
 
 # Constants
@@ -9,7 +9,7 @@ MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
 OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 
-def register_gp_tools(server: FastMCP):
+def register_gp_tools(server: MCPServer):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der gp-tools."
     # TODO: AED-Standort: Wo sind die nächste AED-Standort?
     # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?

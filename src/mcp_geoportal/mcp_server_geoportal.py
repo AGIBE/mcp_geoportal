@@ -3,13 +3,13 @@ import logging
 
 import httpx
 import uvicorn
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from tools.base_tools import register_base_tools
 from tools.gp_tools import register_gp_tools
 from tools.oereb_tools import register_oereb_tools
 
 # mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
-mcp = FastMCP("Geoportal des Kantons Bern")
+mcp = MCPServer("Geoportal des Kantons Bern")
 # app = mcp.streamable_http_app()
 
 # Constants

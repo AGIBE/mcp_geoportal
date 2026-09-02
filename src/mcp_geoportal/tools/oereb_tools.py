@@ -1,12 +1,12 @@
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 # Constants
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
 OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
 
 
-def register_oereb_tools(server: FastMCP):
+def register_oereb_tools(server: MCPServer):
     "Hilfsfunktion zum Gruppieren und einfachen Importieren der oereb-tools."
     
     @server.tool(

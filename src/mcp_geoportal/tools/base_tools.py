@@ -3,7 +3,8 @@ from typing import Union
 from pydantic import BaseModel, Field
 
 import httpx
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server import MCPServer
+from mcp.server.mcpserver import Context
 from mcp.server.session import ServerSession
 
 
@@ -31,11 +32,11 @@ OEREB_API_BASE = "https://www.oereb2.apps.be.ch"
         # return ElicitResult(action="decline")
 
     # # Use the response_type dataclass to create a properly structured response
-    # # FastMCP handles the conversion from JSON schema to Python type
-    # # Return data directly - FastMCP will implicitly accept the elicitation
+    # # MCPServer handles the conversion from JSON schema to Python type
+    # # Return data directly - MCPServer will implicitly accept the elicitation
     # return response_type(value=user_response)
 
-def register_base_tools(server: FastMCP):
+def register_base_tools(server: MCPServer):
     # TODO Basisfunktionen ausbauen
     # TODO: z.B. Von Koordinate zu Gemeinde / EGRID
     # TODO: von einer Parzellennummer zu EGRID
