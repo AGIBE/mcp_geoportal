@@ -20,6 +20,7 @@ def register_gp_tools(server: MCPServer):
     # TODO: Abfragen von Erdbebenzonen für EGRID (WMS der swisstopo mit getFeatureInfo auf https://wms.geo.admin.ch) -> evtl. Anreichern bei Naturgefahrenabfrage
     # TODO: Abragen aktueller Messdaten von Oberflächengewässern oder Luftqualität (klären, ob es API auf Messnetze gibt)
     # TODO: Rutschgebiete der AV (noch keine Geodaten)
+    # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
     # ADMGDE
     @server.tool(
             name="Hole_Gemeindeinfos_zu_BFSNummer",
