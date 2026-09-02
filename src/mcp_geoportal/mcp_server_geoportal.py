@@ -8,9 +8,11 @@ from tools.base_tools import register_base_tools
 from tools.gp_tools import register_gp_tools
 from tools.oereb_tools import register_oereb_tools
 
-# mcp = FastMCP("Geoportal des Kantons Bern", stateless_http=True)
+# Server-Instanz
 mcp = MCPServer("Geoportal des Kantons Bern")
-# app = mcp.streamable_http_app()
+
+# Logging initialisieren
+logger = logging.getLogger(__name__)
 
 # Constants
 MWH_API_BASE = "https://www.metawarehouse.apps.be.ch"
@@ -30,7 +32,7 @@ def get_geoproducts() -> list[dict]:
         list[str]: Eine Liste mit den Codes und Bezeichnungen aller Geoprodukte
     """
     url = f"{MWH_API_BASE}/geoportal_geoproduct?select=code,name"
-    logging.info(url)
+    logger.info(url)
     mwh_result = httpx.get(url)
     result_list = []
     mwh_json = mwh_result.json()
