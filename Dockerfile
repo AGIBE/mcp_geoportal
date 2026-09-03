@@ -1,34 +1,47 @@
-FROM python:3.14.7-slim as builder
+# syntax=docker/dockerfile:1
+
+# ---------- Stage 1: Builder ----------
+FROM python:3.14.7-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
-COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /usr/local/bin/uv
+# Erst nur Dependency-Dateien -> Layer-Caching
+COPY pyproject.toml uv.lock ./
 
-ADD . /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev
 
-# COPY pyproject.toml ./
-# COPY uv.lock* ./
-# COPY README.md* ./
-
-RUN uv sync --frozen --no-dev --no-cache
-
-FROM python:3.14.7-slim
-
-WORKDIR /app
-
-#RUN groupadd appuser && useradd -m -g appuser appuser
-
-COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /usr/local/bin/uv
-
-COPY --from=builder /app/.venv /app/.venv
-
-#COPY --chown=appuser:appuser . .
+# Restlichen Code kopieren und Projekt selbst installieren
 COPY . .
 
-ENV PATH="/app/.venv/bin:$PATH"
-ENV PYTHONUNBUFFERED=1
-RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
-# appuser
+# ---------- Stage 2: Runtime ----------
+FROM python:3.14.7-slim AS runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+
+WORKDIR /app
+
+# Non-root User + Gruppe anlegen
+RUN groupadd --system --gid 1000 appuser && \
+    useradd --system --uid 1000 --gid appuser --no-create-home appuser
+
+# Nur das fertige venv + Code aus der Builder-Stage übernehmen
+COPY --from=builder --chown=appuser:appuser /app /app
+
+USER appuser
+
+# RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
+
+EXPOSE 8000
 
 CMD ["python", "src/mcp_geoportal/mcp_server_geoportal.py", "--mode", "http"]
