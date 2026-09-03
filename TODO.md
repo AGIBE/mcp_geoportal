@@ -1,7 +1,0 @@
-- Logging (stdout, stderr)
-- Migration SDK V1 => V2
-- Dockerfile nicht als root (useradd)
-- alle Libraries upgraden (DuckDB)
-- Github Action zum Image builden
-- unit tests
-- Liveness / Readyness
