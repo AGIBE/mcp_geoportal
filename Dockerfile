@@ -1,22 +1,24 @@
-FROM python:3.13.9-slim as builder
+FROM python:3.14.7-slim as builder
 
 WORKDIR /app
 
-COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /usr/local/bin/uv
 
-COPY pyproject.toml ./
-COPY uv.lock* ./
-COPY README.md* ./
+ADD . /app
 
-RUN uv sync --frozen --no-dev
+# COPY pyproject.toml ./
+# COPY uv.lock* ./
+# COPY README.md* ./
 
-FROM python:3.13.9-slim
+RUN uv sync --frozen --no-dev --no-cache
+
+FROM python:3.14.7-slim
 
 WORKDIR /app
 
 #RUN groupadd appuser && useradd -m -g appuser appuser
 
-COPY --from=ghcr.io/astral-sh/uv:0.9.4 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /usr/local/bin/uv
 
 COPY --from=builder /app/.venv /app/.venv
 

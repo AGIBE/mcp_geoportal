@@ -15,6 +15,9 @@ dependencies = [
     "uvicorn>=0.52.4",
 ]
 
+[project.scripts]
+mcp-geoportal = "mcp_geoportal:main"
+
 [tool.setuptools]
 include-package-data = true
 
@@ -23,3 +26,9 @@ version = {attr = "mcp_geoportal.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src/"]
+
+[dependency-groups]
+dev = [
+    "build>=1.6.0",
+]
+
