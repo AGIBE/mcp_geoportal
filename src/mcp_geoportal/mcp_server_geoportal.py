@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import dataclass
 import logging
 import time
+from typing import Union
 
 import httpx
 import uvicorn
@@ -12,9 +13,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from mcp_geoportal import __version__
-from tools.base_tools import register_base_tools
-from tools.gp_tools import register_gp_tools
-from tools.oereb_tools import register_oereb_tools
+from tools.base_tools import __get_bfsnr_for_gemeinde, __get_egrid_from_address
+from tools.gp_tools import __get_gemeinde_infos, __get_bohrprofile_for_egrid, __get_naturgefahren_for_egrid, __get_property_info_for_egrid
+from tools.oereb_tools import __get_oereb_themes, __get_oereb_auszug
 
 # Server-Instanz
 mcp = MCPServer(
@@ -40,11 +41,6 @@ EXTERNAL_APIS = {
         "readyness_url": "https://geofiles.be.ch/readyness.txt"
     }
 }
-
-# Registriere alle Tools
-register_base_tools(mcp, EXTERNAL_APIS)
-register_oereb_tools(mcp, EXTERNAL_APIS)
-register_gp_tools(mcp, EXTERNAL_APIS)
 
 @dataclass
 class APICheckResult:
@@ -133,6 +129,94 @@ def get_geoproducts() -> list[dict]:
         result_list.append(gpr_dict)
 
     return result_list
+
+# ÖREB-Tools
+
+@mcp.tool(
+    name="Suche_Themen_OEREB_Kataster",
+    description="""Fragt im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab.""",
+)
+async def get_oereb_themes() -> dict[str, str]:
+    return await __get_oereb_themes(EXTERNAL_APIS)
+
+
+@mcp.tool(
+    name="Hole_OEREB_Auszug",
+    description="""Erstellt für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und liest alle vorhandenen Eigentumsbeschränkungen aus.
+        Als Input wird der E-GRID benötigt.""",
+)
+async def get_oereb_auszug(egrid: str) -> str:
+    return await __get_oereb_auszug(egrid, EXTERNAL_APIS)
+
+# BASE-Tools
+
+@mcp.tool(
+    name="Suche_BFSNR_zu_Gemeinde",
+    description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
+)
+async def get_bfsnr_for_gemeinde(
+    searchtext: str) -> Union[float, dict]:
+    return await __get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS)
+
+@mcp.tool(
+    name="Suche_EGRID_fuer_Adresse",
+    description="""Gibt für die eingegebene Adresse (Format: Strasse Nr., Gemeinde) den E-GRID (Eidgenössischer Grundstückidentifikator)
+    sowie die X- und Y-Koordinate zurück.""",
+)
+async def get_egrid_from_address(
+    searchtext: str,
+) -> Union[dict[str, float, float], dict]:
+    return await __get_egrid_from_address(searchtext, EXTERNAL_APIS)
+
+# GP-Tools
+
+@mcp.tool(
+    name="Hole_Gemeindeinfos_zu_BFSNummer",
+    description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha und Steueranlage.
+        Returns:
+            list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
+)
+async def get_gemeinde_infos(bfs_nr: int) -> dict:
+    return await __get_gemeinde_infos(bfs_nr, EXTERNAL_APIS)
+
+@mcp.tool(
+    name="Hole_Bohrprofile_zu_EGRID",
+    description="""Gibt die Bohrprofile (gemäss Geoprodukt GEOSOND) im Umkreis von 300m um den eingegebenen E-GRID zurück.
+    Args:
+        egrid (str): E-GRID, für welcher Bohrprofile gesucht werden sollen.
+    Returns:
+        list[dict]: Eine Liste mit einem Dictionary pro gefundenem Bohrprofil. Jeder Dictionary hat 5 Keys:
+                    - Sondiertyp: Sondiertyp
+                    - Sondierdatum: Datum der Sondierung
+                    - Sondiertiefe: Tiefe der Sondierung
+                    - Entfernung: Distanz des Sondierungsstandort zum Grundstück (E-GRID)
+                    - pdf_link: Link auf das Bohrprofil-PDF
+        str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_bohrprofile_for_egrid(egrid: str) -> dict:
+    return await __get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS)
+
+@mcp.tool(
+    name="Hole_Naturgefahreninfo_zu_EGRID",
+    description="""Ermittelt für eine Adresse (Strasse Hausnummer, Ort) die Naturgefahrestufe pro Gefahr (Einsturz/Absenkung, Wasser, Sturz, Lawine, Rutschung).
+        Args:
+            egrid (str): E-GRID für den die Naturgefahren ermittelt werden sollen.
+        Returns:
+            dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_naturgefahren_for_egrid(egrid: str) -> dict:
+    return await __get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS)
+
+@mcp.tool(
+    name="Hole_Grundstueck_Info",
+    description="""Ermittelt die verfügbaren Grundstücksdaten ohne Eigentumsauskunft.
+        Returns:
+            dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_property_info_for_egrid(egrid: str) -> dict:
+    return await __get_property_info_for_egrid(egrid, EXTERNAL_APIS)
 
 
 if __name__ == "__main__":
