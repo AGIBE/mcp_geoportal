@@ -24,7 +24,8 @@ from mcp.client.streamable_http import streamable_http_client
 
 # --- Konfiguration -----------------------------------------------------
 
-SERVER_URL = "https://mcp-geoportal-580214340102.europe-west6.run.app/mcp"
+#SERVER_URL = "https://mcp-geoportal-580214340102.europe-west6.run.app/mcp"
+SERVER_URL = "http://localhost:6789/mcp"
 
 TOOL_NAME = "Hole_Gemeindeinfos_zu_BFSNummer"
 TOOL_ARGS = {"bfs_nr": "743"}
