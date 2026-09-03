@@ -1,6 +1,4 @@
 import argparse
-import asyncio
-from dataclasses import dataclass
 import logging
 import time
 from typing import Union
@@ -13,9 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from mcp_geoportal import __version__
-from tools.base_tools import __get_bfsnr_for_gemeinde, __get_egrid_from_address
-from tools.gp_tools import __get_gemeinde_infos, __get_bohrprofile_for_egrid, __get_naturgefahren_for_egrid, __get_property_info_for_egrid
-from tools.oereb_tools import __get_oereb_themes, __get_oereb_auszug
+import mcp_geoportal.tools
 
 # Server-Instanz
 mcp = MCPServer(
@@ -42,44 +38,10 @@ EXTERNAL_APIS = {
     }
 }
 
-@dataclass
-class APICheckResult:
-    name: str
-    url: str
-    ok: bool
-    error: str | None = None
-
-
-async def _check_single_api(
-    client: httpx.AsyncClient, name: str, url: str
-) -> APICheckResult:
-    try:
-        response = await client.head(url)
-        response.raise_for_status()
-        return APICheckResult(name=name, url=url, ok=True)
-    except httpx.TimeoutException:
-        return APICheckResult(name=name, url=url, ok=False, error="Timeout")
-    except httpx.HTTPStatusError as e:
-        return APICheckResult(
-            name=name, url=url, ok=False, error=f"Status {e.response.status_code}"
-        )
-    except httpx.RequestError as e:
-        return APICheckResult(name=name, url=url, ok=False, error=str(e))
-
-
-async def check_external_apis(
-    readyness_urls = {name: api["readyness_url"] for name, api in EXTERNAL_APIS.items()}
-) -> list[APICheckResult]:
-    """Prüft alle konfigurierten externen APIs parallel."""
-    async with httpx.AsyncClient(timeout=3.0) as client:
-        results = await asyncio.gather(
-            *[_check_single_api(client, name, url) for name, url in readyness_urls.items()]
-        )
-    return list(results)
-
 @mcp.custom_route("/ready", methods=["GET"])
 async def readiness(request: Request) -> JSONResponse:
-    results = await check_external_apis()
+    readyness_urls = {name: api["readyness_url"] for name, api in EXTERNAL_APIS.items()}
+    results = await mcp_geoportal.tools.check_external_apis(readyness_urls)
     all_ok = all(r.ok for r in results)
     body = {
         "status": "ready" if all_ok else "not_ready",
@@ -137,7 +99,7 @@ def get_geoproducts() -> list[dict]:
     description="""Fragt im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab.""",
 )
 async def get_oereb_themes() -> dict[str, str]:
-    return await __get_oereb_themes(EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_oereb_themes(EXTERNAL_APIS)
 
 
 @mcp.tool(
@@ -146,7 +108,7 @@ async def get_oereb_themes() -> dict[str, str]:
         Als Input wird der E-GRID benötigt.""",
 )
 async def get_oereb_auszug(egrid: str) -> str:
-    return await __get_oereb_auszug(egrid, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS)
 
 # BASE-Tools
 
@@ -156,7 +118,7 @@ async def get_oereb_auszug(egrid: str) -> str:
 )
 async def get_bfsnr_for_gemeinde(
     searchtext: str) -> Union[float, dict]:
-    return await __get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS)
 
 @mcp.tool(
     name="Suche_EGRID_fuer_Adresse",
@@ -166,7 +128,7 @@ async def get_bfsnr_for_gemeinde(
 async def get_egrid_from_address(
     searchtext: str,
 ) -> Union[dict[str, float, float], dict]:
-    return await __get_egrid_from_address(searchtext, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_egrid_from_address(searchtext, EXTERNAL_APIS)
 
 # GP-Tools
 
@@ -177,7 +139,7 @@ async def get_egrid_from_address(
             list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
 )
 async def get_gemeinde_infos(bfs_nr: int) -> dict:
-    return await __get_gemeinde_infos(bfs_nr, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_gemeinde_infos(bfs_nr, EXTERNAL_APIS)
 
 @mcp.tool(
     name="Hole_Bohrprofile_zu_EGRID",
@@ -194,7 +156,7 @@ async def get_gemeinde_infos(bfs_nr: int) -> dict:
         str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
 async def get_bohrprofile_for_egrid(egrid: str) -> dict:
-    return await __get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS)
 
 @mcp.tool(
     name="Hole_Naturgefahreninfo_zu_EGRID",
@@ -206,7 +168,7 @@ async def get_bohrprofile_for_egrid(egrid: str) -> dict:
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
 async def get_naturgefahren_for_egrid(egrid: str) -> dict:
-    return await __get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS)
 
 @mcp.tool(
     name="Hole_Grundstueck_Info",
@@ -216,7 +178,7 @@ async def get_naturgefahren_for_egrid(egrid: str) -> dict:
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
 async def get_property_info_for_egrid(egrid: str) -> dict:
-    return await __get_property_info_for_egrid(egrid, EXTERNAL_APIS)
+    return await mcp_geoportal.tools.__get_property_info_for_egrid(egrid, EXTERNAL_APIS)
 
 
 if __name__ == "__main__":
