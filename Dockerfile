@@ -33,7 +33,7 @@ WORKDIR /app
 
 # Non-root User + Gruppe anlegen
 RUN groupadd --system --gid 1000 appuser && \
-    useradd --system --uid 1000 --gid appuser --no-create-home appuser
+    useradd --system --uid 1000 --gid appuser --create-home appuser
 
 # Nur das fertige venv + Code aus der Builder-Stage übernehmen
 COPY --from=builder --chown=appuser:appuser /app /app
