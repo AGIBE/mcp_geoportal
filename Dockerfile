@@ -38,7 +38,7 @@ COPY --from=builder --chown=appuser:appuser /app /app
 
 USER appuser
 
-# RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
+RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
 
 # EXPOSE 6789
 
