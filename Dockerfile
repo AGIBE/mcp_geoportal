@@ -14,14 +14,12 @@ WORKDIR /app
 # Erst nur Dependency-Dateien -> Layer-Caching
 COPY pyproject.toml uv.lock ./
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev
 
 # Restlichen Code kopieren und Projekt selbst installieren
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # ---------- Stage 2: Runtime ----------
 FROM python:3.14.7-slim AS runtime
@@ -42,6 +40,6 @@ USER appuser
 
 # RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
 
-EXPOSE 8000
+# EXPOSE 6789
 
 CMD ["python", "src/mcp_geoportal/mcp_server_geoportal.py", "--mode", "http"]
