@@ -1,0 +1,31 @@
+name: Docker-Image erstellen
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Versions-Tag"
+        required: true
+        type: string
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Code auschecken
+      uses: actions/checkout@v4
+
+    - name: Podman-Version checken
+      run: podman --version
+
+    - name: Registry anmelden
+      run: echo "${{ secrets.GHCR_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Image bauen
+      run: podman build -t ghcr.io/agibe/mcp_geoportal:${{ inputs.tag }} .
+
+    - name: Image pushen
+      run: podman image push ghcr.io/agibe/mcp_geoportal:${{ inputs.tag }}
