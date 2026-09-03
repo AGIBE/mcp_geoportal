@@ -368,8 +368,7 @@ cli = [
 
 [[package]]
 name = "mcp-geoportal"
-version = "0.3"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "httpx" },

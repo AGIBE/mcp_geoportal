@@ -11,6 +11,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from mcp_geoportal import __version__
 from tools.base_tools import register_base_tools
 from tools.gp_tools import register_gp_tools
 from tools.oereb_tools import register_oereb_tools
@@ -103,6 +104,14 @@ async def liveness(request: Request) -> Response:
         {
             "status": "ok",
             "uptime_s": round(time.time() - START_TIME, 1),
+        }
+    )
+
+@mcp.custom_route("/version", methods=["GET"])
+async def version(request: Request) -> Response:
+    return JSONResponse(
+        {
+            "version": f"{__version__}"
         }
     )
 

@@ -1,6 +1,10 @@
+[build-system]
+requires = ["setuptools >= 61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "mcp-geoportal"
-version = "0.3"
+dynamic = ["version"]
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -10,3 +14,12 @@ dependencies = [
     "mcp[cli]>=2.1.1",
     "uvicorn>=0.52.4",
 ]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "mcp_geoportal.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src/"]
