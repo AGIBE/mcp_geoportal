@@ -1,8 +1,7 @@
 import json
 
 import duckdb
-from mcp.server import MCPServer
-from tools.create_map_link import get_map_link
+from .create_map_link import get_map_link
 
 # TODO: AED-Standort: Wo sind die nächste AED-Standort?
 # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
