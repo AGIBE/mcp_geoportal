@@ -10,7 +10,7 @@ import httpx
 
 async def __get_bfsnr_for_gemeinde(
     searchtext: str, api_definitions: dict
-) -> Union[float, dict]:
+) -> Union[int, dict]:
     """
     Args:
         searchtext (str): Suchtext mit dem nach der BFS-Nummer gesucht wird (Format: Gemeindename).
@@ -21,20 +21,27 @@ async def __get_bfsnr_for_gemeinde(
     params = {"searchtext": searchtext, "origins": "grenz5"}
     result = httpx.get(url_search, params=params)
     js = result.json()
-    result_ohnebfs = (re.sub(r"\s\d+", "", js[0]["label"])).lower()
-    if len(js) == 1 or (result_ohnebfs == searchtext.lower()):
-        # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
-        bfsnr = int((re.findall(r"\s\d+", js[0]["label"])[0]).strip())
+    if js:
+        result_ohnebfs = (re.sub(r"\s\d+", "", js[0]["label"])).lower()
+        if len(js) == 1 or (result_ohnebfs == searchtext.lower()):
+            # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
+            bfsnr = int((re.findall(r"\s\d+", js[0]["label"])[0]).strip())
 
-        return bfsnr
+            return bfsnr
+        else:
+            adresslist = []
+            for gemeinde in js:
+                adresslist.append(gemeinde["label"])
+            return {
+                "hinweis": "Mehrdeutiger oder unpräziser Gemeindename. Bitte wähle eine der folgenden Gemeinden:",
+                "optionen": adresslist,
+            }
     else:
-        adresslist = []
-        for gemeinde in js:
-            adresslist.append(gemeinde["label"])
+        # Keinen Treffer gefunden
         return {
-            "hinweis": "Mehrdeutiger oder unpräziser Gemeindename. Bitte wähle eine der folgenden Gemeinden:",
-            "optionen": adresslist,
+            "hinweis": "Gemeindename nicht gefunden. Bitte nach einem anderen Gemeindenamen suchen."
         }
+
 
 async def __get_egrid_from_address(
     searchtext: str, api_definitions: dict
