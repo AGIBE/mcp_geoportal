@@ -117,7 +117,7 @@ async def get_oereb_auszug(egrid: str) -> str:
     description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
 )
 async def get_bfsnr_for_gemeinde(
-    searchtext: str) -> Union[float, dict]:
+    searchtext: str) -> Union[int, dict]:
     return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS)
 
 @mcp.tool(
