@@ -19,3 +19,11 @@ local_dev:
 # Startet den MCP-Server als Webservice
 server:
     uv run python src\mcp_geoportal\mcp_server_geoportal.py --mode=http
+
+# Führt die Test-Suite lokal aus
+test_local:
+    uv run pytest tests --env=dev
+
+# Führt die Test-Suite gegen den MCP-Server bei Google aus
+test_google:
+    uv run pytest tests --env=google
