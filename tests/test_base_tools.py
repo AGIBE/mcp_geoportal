@@ -20,3 +20,23 @@ async def test_bfsnr_for_gemeinde_multiple_results(multiple_gemeinde, api_defini
     assert "hinweis" in result.keys()
     assert "optionen" in result.keys()
     assert isinstance(result['optionen'] , list)
+
+@pytest.mark.anyio
+async def test_egrid_from_address_valid(unique_address, api_definitions):
+    result = await __get_egrid_from_address(unique_address[0], api_definitions)
+
+    assert result['egrid'] == unique_address[1]
+
+@pytest.mark.anyio
+async def test_egrid_from_address_inexisting_address(not_existing_address, api_definitions):
+    result = await __get_egrid_from_address(not_existing_address, api_definitions)
+
+    assert "hinweis" in result.keys()
+
+@pytest.mark.anyio
+async def test_egrid_from_address_multiple_address(multiple_address, api_definitions):
+    result = await __get_egrid_from_address(multiple_address, api_definitions)
+
+    assert "hinweis" in result.keys()
+    assert "optionen" in result.keys()
+    assert isinstance(result['optionen'] , list)

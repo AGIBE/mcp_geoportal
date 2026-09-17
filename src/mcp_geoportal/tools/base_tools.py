@@ -60,23 +60,30 @@ async def __get_egrid_from_address(
     params = {"searchtext": searchtext}
     result = httpx.get(url_search, params=params)
     js = result.json()
-    result_ohneplz = (re.sub(r"\b\d{4}\b\s*", "", js[0]["label"])).lower()
-    if result_ohneplz == searchtext.replace(",", "").lower():
-        # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
-        x = js[0]["x"]
-        y = js[0]["y"]
+    if js:
+        result_ohneplz = (re.sub(r"\b\d{4}\b\s*", "", js[0]["label"])).lower()
+        if result_ohneplz == searchtext.replace(",", "").lower():
+            # Prüfen, ob der erste Eintrag identisch mit dem searchtext ist
+            x = js[0]["x"]
+            y = js[0]["y"]
 
-        url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
-        result = httpx.get(url_oereb)
-        js = result.json()
-        egrid = js["GetEGRIDResponse"][0]["egrid"]
-        # return egrid
-        return {"egrid": egrid, "x": x, "y": y}
+            url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
+            result = httpx.get(url_oereb)
+            js = result.json()
+            egrid = js["GetEGRIDResponse"][0]["egrid"]
+            # return egrid
+            return {"egrid": egrid, "x": x, "y": y}
+        else:
+            adresslist = []
+            for adresse in js:
+                adresslist.append(adresse["label"])
+            return {
+                "hinweis": "Mehrdeutige oder unpräzise Adresse. Bitte wähle eine der folgenden Adressen:",
+                "optionen": adresslist,
+            }
     else:
-        adresslist = []
-        for adresse in js:
-            adresslist.append(adresse["label"])
+        # Keinen Treffer gefunden
         return {
-            "hinweis": "Mehrdeutige oder unpräzise Adresse. Bitte wähle eine der folgenden Adressen:",
-            "optionen": adresslist,
+            "hinweis": "Adresse nicht gefunden. Bitte nach einer anderen Adresse suchen."
         }
+

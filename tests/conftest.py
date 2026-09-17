@@ -96,3 +96,23 @@ def multiple_gemeinde() -> str:
     """Gemeindename, der mehrere Ergebnisse zurückgibt.
     """
     return ("igen")
+
+@pytest.fixture
+def unique_address() -> tuple:
+    """Adresse, die ein eindeutiges Ergebnis zurückgibt.
+    """
+    return ("Reiterstrasse 11 Bern", "CH743546874207")
+
+@pytest.fixture
+def not_existing_address() -> str:
+    """Adresse, die kein Ergebnis zurückgibt.
+    """
+    return "asdfasdfsfadfa"
+
+@pytest.fixture
+def multiple_address() -> str:
+    """Adresse, die mehrere Ergebnisse zurückgibt.
+    """
+    return "Reiterstrasse"
+
+
