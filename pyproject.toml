@@ -7,7 +7,7 @@ name = "mcp-geoportal"
 dynamic = ["version"]
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "==3.14.7"
 dependencies = [
     "duckdb>=1.5.5",
     "httpx>=0.28.1",
