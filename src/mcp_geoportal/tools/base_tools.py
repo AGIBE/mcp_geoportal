@@ -121,7 +121,10 @@ async def __get_egrid_from_address(
             "hinweis": "Adresse nicht gefunden. Bitte nach einer anderen Adresse suchen."
         }
 
-async def __get_geoproducts(api_definitions: dict, client: httpx.AsyncClient) -> list[dict[str, str]]:
+
+async def __get_geoproducts(
+    api_definitions: dict, client: httpx.AsyncClient
+) -> list[dict[str, str]]:
     """Gibt alle Geoprodukte aus dem MWH zurück (Code und Bezeichnung)
 
     Args:
@@ -131,7 +134,7 @@ async def __get_geoproducts(api_definitions: dict, client: httpx.AsyncClient) ->
     Returns:
         list[dict[str, str]]: Liste von Dicts (jeweils code und bezeichnung)
     """
-    url_geoproducts = f"{api_definitions['metawarehouse']['api_url']}/geoportal_geoproduct?select=code,name"        
+    url_geoproducts = f"{api_definitions['metawarehouse']['api_url']}/geoportal_geoproduct?select=code,name"
     mwh_result = await client.get(url_geoproducts)
     result_list = []
     mwh_json = mwh_result.json()

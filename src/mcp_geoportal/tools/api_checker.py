@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import httpx
 
+
 @dataclass
 class APICheckResult:
     name: str
@@ -28,11 +29,13 @@ async def _check_single_api(
         return APICheckResult(name=name, url=url, ok=False, error=str(e))
 
 
-async def check_external_apis(
-    readyness_urls: dict[str, str]) -> list[APICheckResult]:
+async def check_external_apis(readyness_urls: dict[str, str]) -> list[APICheckResult]:
     """Prüft alle konfigurierten externen APIs parallel."""
     async with httpx.AsyncClient(timeout=3.0) as client:
         results = await asyncio.gather(
-            *[_check_single_api(client, name, url) for name, url in readyness_urls.items()]
+            *[
+                _check_single_api(client, name, url)
+                for name, url in readyness_urls.items()
+            ]
         )
     return list(results)

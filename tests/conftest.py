@@ -124,27 +124,27 @@ def multiple_address() -> str:
     """Adresse, die mehrere Ergebnisse zurückgibt."""
     return "Reiterstrasse"
 
+
 @pytest.fixture
 def egrid_valid() -> str:
     """Gültiger d.h. existierender EGRID."""
     return "CH743546874207"
+
 
 @pytest.fixture
 def egrid_invalid() -> str:
     """Ungültiger d.h. nichtexistierender EGRID."""
     return "1234asdf"
 
+
 @pytest.fixture
 def http_client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(
-        timeout=5, headers={'User-Agent': USER_AGENT}
-    )
+    return httpx.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
+
 
 @pytest.fixture
 def duckdb_connection() -> duckdb.DuckDBPyConnection:
-    conn = duckdb.connect(database=":memory:", config={
-        "custom_user_agent": USER_AGENT
-    })
+    conn = duckdb.connect(database=":memory:", config={"custom_user_agent": USER_AGENT})
 
     for ext in DUCKDB_EXTENSIONS:
         conn.install_extension(ext)
@@ -152,10 +152,12 @@ def duckdb_connection() -> duckdb.DuckDBPyConnection:
 
     return conn
 
+
 @pytest.fixture
 def bfnsr_valid() -> int:
     """Existierende BFS-Nummer"""
     return 351
+
 
 @pytest.fixture
 def bfnsr_invalid() -> int:

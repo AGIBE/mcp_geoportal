@@ -22,12 +22,11 @@ START_TIME = time.time()
 USER_AGENT = f"MCP_Geoportal/{__version__}"
 DUCKDB_EXTENSIONS = ("spatial", "httpfs")
 
+
 # Lifespan
 def _init_duckdb() -> duckdb.DuckDBPyConnection:
     """Initialisiert die DuckDB-Connection insb. werden die benötigten Extensions installiert und geladen."""
-    conn = duckdb.connect(database=":memory:", config={
-        "custom_user_agent": USER_AGENT
-    })
+    conn = duckdb.connect(database=":memory:", config={"custom_user_agent": USER_AGENT})
 
     for ext in DUCKDB_EXTENSIONS:
         conn.install_extension(ext)
@@ -35,28 +34,26 @@ def _init_duckdb() -> duckdb.DuckDBPyConnection:
 
     return conn
 
+
 @dataclass
 class AppContext:
-    http_client : httpx.AsyncClient
+    http_client: httpx.AsyncClient
     db: duckdb.DuckDBPyConnection
+
 
 @asynccontextmanager
 async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
     """Läuft einmal beim Start des Servers, Cleanup beim Stop."""
-    client = httpx.AsyncClient(
-        timeout=5, headers={'User-Agent': USER_AGENT}
-    )
+    client = httpx.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
     db = _init_duckdb()
     try:
         yield AppContext(http_client=client, db=db)
     finally:
         await client.aclose()
 
+
 # Server-Instanz
-mcp = MCPServer(
-    "Geoportal des Kantons Bern",
-    lifespan=app_lifespan
-)
+mcp = MCPServer("Geoportal des Kantons Bern", lifespan=app_lifespan)
 
 
 # Logging initialisieren
@@ -66,17 +63,18 @@ logger = logging.getLogger("MCP_Geoportal_Logger")
 EXTERNAL_APIS = {
     "metawarehouse": {
         "api_url": "https://www.metawarehouse.apps.be.ch",
-        "readyness_url": "https://www.metawarehouse.apps.be.ch"
+        "readyness_url": "https://www.metawarehouse.apps.be.ch",
     },
     "oereb_server": {
         "api_url": "https://www.oereb2.apps.be.ch",
-        "readyness_url": "https://www.oereb2.apps.be.ch/version"
+        "readyness_url": "https://www.oereb2.apps.be.ch/version",
     },
     "geofiles": {
         "api_url": "https://geofiles.be.ch",
-        "readyness_url": "https://geofiles.be.ch/readyness.txt"
-    }
+        "readyness_url": "https://geofiles.be.ch/readyness.txt",
+    },
 }
+
 
 @mcp.custom_route("/ready", methods=["GET"])
 async def readiness(request: Request) -> JSONResponse:
@@ -96,6 +94,7 @@ async def readiness(request: Request) -> JSONResponse:
     }
     return JSONResponse(body, status_code=200 if all_ok else 503)
 
+
 @mcp.custom_route("/live", methods=["GET"])
 async def liveness(request: Request) -> Response:
     return JSONResponse(
@@ -105,15 +104,14 @@ async def liveness(request: Request) -> Response:
         }
     )
 
+
 @mcp.custom_route("/version", methods=["GET"])
 async def version(request: Request) -> Response:
-    return JSONResponse(
-        {
-            "version": f"{__version__}"
-        }
-    )
+    return JSONResponse({"version": f"{__version__}"})
+
 
 # ÖREB-Tools
+
 
 @mcp.tool(
     name="Suche_Themen_OEREB_Kataster",
@@ -131,13 +129,17 @@ async def get_oereb_themes(ctx: Context[AppContext]) -> dict[str, str]:
 )
 async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> Union[str, dict]:
     http_client = ctx.request_context.lifespan_context.http_client
-    return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS, http_client)
+    return await mcp_geoportal.tools.__get_oereb_auszug(
+        egrid, EXTERNAL_APIS, http_client
+    )
+
 
 # BASE-Tools
 
+
 @mcp.tool(
-        name="Hole_Geoprodukte",
-        description="Holt alle Geoprodukte des Kantons Bern. Es wird eine Liste mit Dictionaries zurückgegeben. Der Dictionary enthält jeweils den Geoprodukt-Code und die -Bezeichnung."
+    name="Hole_Geoprodukte",
+    description="Holt alle Geoprodukte des Kantons Bern. Es wird eine Liste mit Dictionaries zurückgegeben. Der Dictionary enthält jeweils den Geoprodukt-Code und die -Bezeichnung.",
 )
 async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
     """Frage im Metawarehouse des Geoportals alle Geoprodukte des Kantons Bern ab.
@@ -148,14 +150,19 @@ async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
     http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_geoproducts(EXTERNAL_APIS, http_client)
 
+
 @mcp.tool(
     name="Suche_BFSNR_zu_Gemeinde",
     description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
 )
 async def get_bfsnr_for_gemeinde(
-    searchtext: str, ctx: Context[AppContext]) -> Union[int, dict]:
+    searchtext: str, ctx: Context[AppContext]
+) -> Union[int, dict]:
     http_client = ctx.request_context.lifespan_context.http_client
-    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS, http_client)
+    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(
+        searchtext, EXTERNAL_APIS, http_client
+    )
+
 
 @mcp.tool(
     name="Suche_EGRID_fuer_Adresse",
@@ -166,9 +173,13 @@ async def get_egrid_from_address(
     searchtext: str, ctx: Context[AppContext]
 ) -> Union[dict[str, float, float], dict]:
     http_client = ctx.request_context.lifespan_context.http_client
-    return await mcp_geoportal.tools.__get_egrid_from_address(searchtext, EXTERNAL_APIS, http_client)
+    return await mcp_geoportal.tools.__get_egrid_from_address(
+        searchtext, EXTERNAL_APIS, http_client
+    )
+
 
 # GP-Tools
+
 
 @mcp.tool(
     name="Hole_Gemeindeinfos_zu_BFSNummer",
@@ -179,6 +190,7 @@ async def get_egrid_from_address(
 async def get_gemeinde_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str, str]:
     db = ctx.request_context.lifespan_context.db
     return await mcp_geoportal.tools.__get_gemeinde_infos(bfs_nr, EXTERNAL_APIS, db)
+
 
 @mcp.tool(
     name="Hole_Bohrprofile_zu_EGRID",
@@ -194,9 +206,14 @@ async def get_gemeinde_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str,
                     - pdf_link: Link auf das Bohrprofil-PDF
         str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_bohrprofile_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[list[dict], str]:
+async def get_bohrprofile_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[list[dict], str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS, db)
+    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
 
 @mcp.tool(
     name="Hole_Naturgefahreninfo_zu_EGRID",
@@ -207,9 +224,14 @@ async def get_bohrprofile_for_egrid(egrid: str, ctx: Context[AppContext]) -> tup
             dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_naturgefahren_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[dict, str]:
+async def get_naturgefahren_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS, db)
+    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
 
 @mcp.tool(
     name="Hole_Grundstueck_Info",
@@ -218,9 +240,13 @@ async def get_naturgefahren_for_egrid(egrid: str, ctx: Context[AppContext]) -> t
             dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_property_info_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[dict, str]:
+async def get_property_info_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_property_info_for_egrid(egrid, EXTERNAL_APIS, db)
+    return await mcp_geoportal.tools.__get_property_info_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
 
 
 if __name__ == "__main__":

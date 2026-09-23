@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 
+
 def is_well_formed_xml(xml_string: str) -> bool:
     """Prüft ob der übergebene String ein well formed XML ist
 
