@@ -1,10 +1,11 @@
+import duckdb
 import httpx
 import pytest
 from mcp import ClientSession
 from mcp.client import Client
 from mcp.client.streamable_http import streamable_http_client
 from mcp_geoportal.mcp_server_geoportal import mcp
-from mcp_geoportal import __version__
+from mcp_geoportal.mcp_server_geoportal import USER_AGENT, DUCKDB_EXTENSIONS
 
 
 def pytest_addoption(parser):
@@ -136,6 +137,27 @@ def egrid_invalid() -> str:
 @pytest.fixture
 def http_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
-        timeout=5, headers={'User-Agent': f"MCP_Geoportal/{__version__}"}
+        timeout=5, headers={'User-Agent': USER_AGENT}
     )
 
+@pytest.fixture
+def duckdb_connection() -> duckdb.DuckDBPyConnection:
+    conn = duckdb.connect(database=":memory:", config={
+        "custom_user_agent": USER_AGENT
+    })
+
+    for ext in DUCKDB_EXTENSIONS:
+        conn.install_extension(ext)
+        conn.load_extension(ext)
+
+    return conn
+
+@pytest.fixture
+def bfnsr_valid() -> int:
+    """Existierende BFS-Nummer"""
+    return 351
+
+@pytest.fixture
+def bfnsr_invalid() -> int:
+    """Nicht existierende BFS-Nummer"""
+    return 666666

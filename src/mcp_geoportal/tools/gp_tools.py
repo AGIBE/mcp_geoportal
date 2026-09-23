@@ -15,34 +15,33 @@ from .create_map_link import get_map_link
 # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
 
 
-async def __get_gemeinde_infos(bfs_nr: int, api_definitions: dict) -> dict:
+async def __get_gemeinde_infos(bfs_nr: int, api_definitions: dict, con: duckdb.DuckDBPyConnection) -> dict:
     """
     ADMGDE_GDEDAT
     """
-    con = duckdb.connect()
-    con.install_extension("spatial")
-    con.load_extension("spatial")
+    cursor = con.cursor()
     spatial_sql = f"""
                     select
-                    gde.espop AS Einwohnerzahl, gde.espop_gmfl AS "Bevölkerungsdichte pro ha", gde.gmdflaeche AS "Gemeindefläche in ha", ste.steuanlg as Steueranlage, gde.url AS Website
+                    gde.espop::VARCHAR AS Einwohnerzahl, gde.espop_gmfl::VARCHAR AS "Bevölkerungsdichte pro ha", gde.gmdflaeche::VARCHAR AS "Gemeindefläche in ha", ste.steuanlg::VARCHAR as Steueranlage, gde.url::VARCHAR AS Website
                     from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
                     join '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/STEUERN/steuern_steuanl.parquet' ste on ST_Intersects(gde.geometry, ST_Buffer(ste.geometry, -50))
                     where gde.bfsnr = {bfs_nr}
                 """
-    con.execute(spatial_sql)
-    row = con.fetchone()
-    if row is None:
-        return {}
-    columns = [desc[0] for desc in con.description]
+    try:
+        cursor.execute(spatial_sql)
+        row = cursor.fetchone()
+        if row is None:
+            return {}
+        columns = [desc[0] for desc in cursor.description]
+    finally:
+        cursor.close()
     return dict(zip(columns, row))
 
-async def __get_bohrprofile_for_egrid(egrid: str, api_definitions: dict) -> dict:
+async def __get_bohrprofile_for_egrid(egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection) -> dict:
     """
     GEOSOND_GEOSOND
     """
-    con = duckdb.connect()
-    con.install_extension("spatial")
-    con.load_extension("spatial")
+    cursor = con.cursor()
     spatial_sql = f"""
                     select
                     typt_sondtyp_de as Sondiertyp, sond_datum as Sondierdatum, sond_tiefe as Sondiertiefe, round(ST_Distance(lif.geometry, gef.geometry)) as Entfernung, url as pdf_link
@@ -51,20 +50,23 @@ async def __get_bohrprofile_for_egrid(egrid: str, api_definitions: dict) -> dict
                     where
                     lif.egrid = '{egrid}'
                 """
-    con.execute(spatial_sql)
-    results = con.fetchall()
-    columns = [desc[0] for desc in con.description]
+    try:
+        cursor.execute(spatial_sql)
+        results = cursor.fetchall()
+        if not results:
+            return ([{}], '')
+        columns = [desc[0] for desc in cursor.description]
+    finally:
+        cursor.close()
     dicts = [dict(zip(columns, row)) for row in results]
     map_link = get_map_link("get_bohrprofile_for_egrid", {"egrid": egrid})
     return dicts, map_link
 
-async def __get_naturgefahren_for_egrid(egrid: str, api_definitions: dict) -> dict:
+async def __get_naturgefahren_for_egrid(egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection) -> dict:
     """
     NATGEFKA_GEFGEB
     """
-    con = duckdb.connect()
-    con.install_extension("spatial")
-    con.load_extension("spatial")
+    cursor = con.cursor()
     spatial_sql = f"""
                     select
                     json_object('gefahr', gef.hprozt_hproz_de,'stufe', gef.gefstuf) AS gefahrenstufe
@@ -73,8 +75,13 @@ async def __get_naturgefahren_for_egrid(egrid: str, api_definitions: dict) -> di
                     where
                     lif.egrid = '{egrid}'
                 """
-    con.execute(spatial_sql)
-    results = con.fetchall()
+    try:
+        cursor.execute(spatial_sql)
+        results = cursor.fetchall()
+        if not results:
+            return ({}, '')
+    finally:
+        cursor.close()
     result_dict = {}
     for row in results:
         json_str = row[0]
@@ -111,23 +118,24 @@ def get_gefahrenstufe_mapped(value: int) -> str:
     }
     return mapping.get(value, "unbekannte Gefahrenstufe")
 
-async def __get_property_info_for_egrid(egrid: str, api_definitions: dict) -> dict:
+async def __get_property_info_for_egrid(egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection) -> dict:
     """
     DIPANU_DIPANUF
     """
-    con = duckdb.connect()
-    con.install_extension("spatial")
-    con.load_extension("spatial")
+    cursor = con.cursor()
     spatial_sql = f"""
                     select
                     dp.gstnr as Grundstücksnummer, dp.gstbez as Grundstückbezeichnung, dp.gbflae as Grundstücksfläche, dp.gstartt_gstart_de as Grundstückart_deutsch, dp.gstartt_gstart_fr as Grundstückart_französisch
                     from '{api_definitions['geofiles']['api_url']}/geoportal/pub/download/DIPANU/dipanu_dipanuf.parquet' dp
                     where egrid = '{egrid}'
                 """
-    con.execute(spatial_sql)
-    row = con.fetchone()
-    if row is None:
-        return {}
-    columns = [desc[0] for desc in con.description]
+    try:
+        cursor.execute(spatial_sql)
+        row = cursor.fetchone()
+        columns = [desc[0] for desc in cursor.description]
+        if not row:
+            return ({}, '')
+    finally:
+        cursor.close()
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link

@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Union
 
+import duckdb
 import httpx
 import uvicorn
 from mcp.server import MCPServer
@@ -18,20 +19,36 @@ from mcp_geoportal import __version__
 import mcp_geoportal.tools
 
 START_TIME = time.time()
+USER_AGENT = f"MCP_Geoportal/{__version__}"
+DUCKDB_EXTENSIONS = ("spatial", "httpfs")
 
 # Lifespan
+def _init_duckdb() -> duckdb.DuckDBPyConnection:
+    """Initialisiert die DuckDB-Connection insb. werden die benötigten Extensions installiert und geladen."""
+    conn = duckdb.connect(database=":memory:", config={
+        "custom_user_agent": USER_AGENT
+    })
+
+    for ext in DUCKDB_EXTENSIONS:
+        conn.install_extension(ext)
+        conn.load_extension(ext)
+
+    return conn
+
 @dataclass
 class AppContext:
     http_client : httpx.AsyncClient
+    db: duckdb.DuckDBPyConnection
 
 @asynccontextmanager
 async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
     """Läuft einmal beim Start des Servers, Cleanup beim Stop."""
     client = httpx.AsyncClient(
-        timeout=5, headers={'User-Agent': f"MCP_Geoportal/{__version__}"}
+        timeout=5, headers={'User-Agent': USER_AGENT}
     )
+    db = _init_duckdb()
     try:
-        yield AppContext(http_client=client)
+        yield AppContext(http_client=client, db=db)
     finally:
         await client.aclose()
 
@@ -165,8 +182,9 @@ async def get_egrid_from_address(
         Returns:
             list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
 )
-async def get_gemeinde_infos(bfs_nr: int) -> dict:
-    return await mcp_geoportal.tools.__get_gemeinde_infos(bfs_nr, EXTERNAL_APIS)
+async def get_gemeinde_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str, str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_gemeinde_infos(bfs_nr, EXTERNAL_APIS, db)
 
 @mcp.tool(
     name="Hole_Bohrprofile_zu_EGRID",
@@ -182,8 +200,9 @@ async def get_gemeinde_infos(bfs_nr: int) -> dict:
                     - pdf_link: Link auf das Bohrprofil-PDF
         str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_bohrprofile_for_egrid(egrid: str) -> dict:
-    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS)
+async def get_bohrprofile_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[list[dict], str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(egrid, EXTERNAL_APIS, db)
 
 @mcp.tool(
     name="Hole_Naturgefahreninfo_zu_EGRID",
@@ -194,8 +213,9 @@ async def get_bohrprofile_for_egrid(egrid: str) -> dict:
             dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_naturgefahren_for_egrid(egrid: str) -> dict:
-    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS)
+async def get_naturgefahren_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[dict, str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(egrid, EXTERNAL_APIS, db)
 
 @mcp.tool(
     name="Hole_Grundstueck_Info",
@@ -204,8 +224,9 @@ async def get_naturgefahren_for_egrid(egrid: str) -> dict:
             dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_property_info_for_egrid(egrid: str) -> dict:
-    return await mcp_geoportal.tools.__get_property_info_for_egrid(egrid, EXTERNAL_APIS)
+async def get_property_info_for_egrid(egrid: str, ctx: Context[AppContext]) -> tuple[dict, str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_property_info_for_egrid(egrid, EXTERNAL_APIS, db)
 
 
 if __name__ == "__main__":
