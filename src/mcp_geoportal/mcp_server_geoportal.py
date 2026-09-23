@@ -20,7 +20,7 @@ mcp = MCPServer(
 START_TIME = time.time()
 
 # Logging initialisieren
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("MCP_Geoportal_Logger")
 
 # Constants
 EXTERNAL_APIS = {
@@ -107,7 +107,7 @@ async def get_oereb_themes() -> dict[str, str]:
     description="""Erstellt für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und liest alle vorhandenen Eigentumsbeschränkungen aus.
         Als Input wird der E-GRID benötigt.""",
 )
-async def get_oereb_auszug(egrid: str) -> str:
+async def get_oereb_auszug(egrid: str) -> Union[str, dict]:
     return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS)
 
 # BASE-Tools

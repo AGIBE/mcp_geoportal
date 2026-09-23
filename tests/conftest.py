@@ -120,3 +120,13 @@ def not_existing_address() -> str:
 def multiple_address() -> str:
     """Adresse, die mehrere Ergebnisse zurückgibt."""
     return "Reiterstrasse"
+
+@pytest.fixture
+def egrid_valid() -> str:
+    """Gültiger d.h. existierender EGRID."""
+    return "CH743546874207"
+
+@pytest.fixture
+def egrid_invalid() -> str:
+    """Ungültiger d.h. nichtexistierender EGRID."""
+    return "1234asdf"
