@@ -1,9 +1,25 @@
+import logging
 import httpx
+
+logger = logging.getLogger("MCP_Geoportal_Logger")
 
 async def __get_oereb_themes(api_definitions: dict) -> dict[str, str]:
     """Frage im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab."""
     url = f"{api_definitions['oereb_server']['api_url']}/capabilities/json"
-    result = httpx.get(url)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            result = await client.get(url)
+            result.raise_for_status()
+    except httpx.RequestError as exc:
+        # Irgendein Fehler wurde zurückgegeben
+        logger.error("Fehler beim Abrufen der ÖREB-Themenliste vom ÖREB-Server")
+        logger.error(f"URL: {url}")
+        logger.error(exc)
+        return {
+            "hinweis": "Die Anfrage hat einen Fehler zurückgegeben. Bitte später nochmals probieren."
+        }
+
     result_dict = {}
     js = result.json()
     for theme in js["GetCapabilitiesResponse"]["topic"]:
@@ -25,5 +41,22 @@ async def __get_oereb_auszug(egrid: str, api_definitions: dict) -> str:
 
     """
     url = f"{api_definitions['oereb_server']['api_url']}/extract/xml?egrid={egrid}&lang=de"
-    result = httpx.get(url)
-    return result.text
+    try:
+        async with httpx.AsyncClient() as client:
+            result = await client.get(url)
+            result.raise_for_status()
+    except httpx.RequestError as exc:
+        # Irgendein Fehler wurde zurückgegeben
+        logger.error("Fehler beim Abrufen eines ÖREB-Auszugs vom ÖREB-Server")
+        logger.error(f"URL: {url}")
+        logger.error(exc)
+        return {
+            "hinweis": "Die Anfrage hat einen Fehler zurückgegeben. Bitte anderen EGRID abfragen oder später nochmals probieren."
+        }
+    if result.status_code == 200:
+        return result.text
+    elif result.status_code == 204:
+        # EGRID wurde nicht gefunden (ÖREB-Server gibt hier 204 zurück)
+        return {
+            "hinweis": "EGRID nicht gefunden. Bitte nach einem anderen EGRID suchen."
+        }

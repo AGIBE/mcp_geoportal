@@ -1,7 +1,10 @@
+import logging
 import re
 from typing import Union
 
 import httpx
+
+logger = logging.getLogger("MCP_Geoportal_Logger")
 
 # TODO Basisfunktionen ausbauen
 # TODO: z.B. Von Koordinate zu Gemeinde / EGRID
@@ -19,7 +22,19 @@ async def __get_bfsnr_for_gemeinde(
     """
     url_search = f"{api_definitions['metawarehouse']['api_url']}/rpc/oereb_search"
     params = {"searchtext": searchtext, "origins": "grenz5"}
-    result = httpx.get(url_search, params=params)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            result = await client.get(url_search, params=params)
+    except httpx.RequestError as exc:
+        # Irgendein Fehler wurde zurückgegeben
+        logger.error("Fehler beim Abrufen der ÖREB-Suche.")
+        logger.error(f"URL: {url_search}")
+        logger.error(exc)
+        return {
+            "hinweis": "Die Anfrage hat einen Fehler zurückgegeben. Bitte später nochmals probieren."
+        }
+
     js = result.json()
     if js:
         result_ohnebfs = (re.sub(r"\s\d+", "", js[0]["label"])).lower()
@@ -58,7 +73,19 @@ async def __get_egrid_from_address(
     """
     url_search = f"{api_definitions['metawarehouse']['api_url']}/rpc/oereb_search"
     params = {"searchtext": searchtext}
-    result = httpx.get(url_search, params=params)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            result = await client.get(url_search, params=params)
+    except httpx.RequestError as exc:
+        # Irgendein Fehler wurde zurückgegeben
+        logger.error("Fehler beim Abrufen der ÖREB-Suche.")
+        logger.error(f"URL: {url_search}")
+        logger.error(exc)
+        return {
+            "hinweis": "Die Anfrage hat einen Fehler zurückgegeben. Bitte später nochmals probieren."
+        }
+
     js = result.json()
     if js:
         result_ohneplz = (re.sub(r"\b\d{4}\b\s*", "", js[0]["label"])).lower()
@@ -68,7 +95,17 @@ async def __get_egrid_from_address(
             y = js[0]["y"]
 
             url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
-            result = httpx.get(url_oereb)
+            try:
+                async with httpx.AsyncClient() as client:
+                    result = await client.get(url_oereb)
+            except httpx.RequestError as exc:
+                # Irgendein Fehler wurde zurückgegeben
+                logger.error("Fehler beim Abrufen des EGRIDs vom ÖREB-Servers.")
+                logger.error(f"URL: {url_oereb}")
+                logger.error(exc)
+                return {
+                    "hinweis": "Die Anfrage hat einen Fehler zurückgegeben. Bitte später nochmals probieren."
+                }
             js = result.json()
             egrid = js["GetEGRIDResponse"][0]["egrid"]
             # return egrid
