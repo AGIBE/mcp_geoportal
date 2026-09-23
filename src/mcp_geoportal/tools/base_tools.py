@@ -12,7 +12,7 @@ logger = logging.getLogger("MCP_Geoportal_Logger")
 
 
 async def __get_bfsnr_for_gemeinde(
-    searchtext: str, api_definitions: dict
+    searchtext: str, api_definitions: dict, client: httpx.AsyncClient
 ) -> Union[int, dict]:
     """
     Args:
@@ -24,8 +24,7 @@ async def __get_bfsnr_for_gemeinde(
     params = {"searchtext": searchtext, "origins": "grenz5"}
 
     try:
-        async with httpx.AsyncClient() as client:
-            result = await client.get(url_search, params=params)
+        result = await client.get(url_search, params=params)
     except httpx.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Suche.")
@@ -59,7 +58,7 @@ async def __get_bfsnr_for_gemeinde(
 
 
 async def __get_egrid_from_address(
-    searchtext: str, api_definitions: dict
+    searchtext: str, api_definitions: dict, client: httpx.AsyncClient
 ) -> Union[dict[str, float, float], dict]:
     """
     Args:
@@ -75,8 +74,7 @@ async def __get_egrid_from_address(
     params = {"searchtext": searchtext}
 
     try:
-        async with httpx.AsyncClient() as client:
-            result = await client.get(url_search, params=params)
+        result = await client.get(url_search, params=params)
     except httpx.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Suche.")
@@ -96,8 +94,7 @@ async def __get_egrid_from_address(
 
             url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
             try:
-                async with httpx.AsyncClient() as client:
-                    result = await client.get(url_oereb)
+                result = await client.get(url_oereb)
             except httpx.RequestError as exc:
                 # Irgendein Fehler wurde zurückgegeben
                 logger.error("Fehler beim Abrufen des EGRIDs vom ÖREB-Servers.")

@@ -1,8 +1,10 @@
+import httpx
 import pytest
 from mcp import ClientSession
 from mcp.client import Client
 from mcp.client.streamable_http import streamable_http_client
 from mcp_geoportal.mcp_server_geoportal import mcp
+from mcp_geoportal import __version__
 
 
 def pytest_addoption(parser):
@@ -130,3 +132,10 @@ def egrid_valid() -> str:
 def egrid_invalid() -> str:
     """Ungültiger d.h. nichtexistierender EGRID."""
     return "1234asdf"
+
+@pytest.fixture
+def http_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        timeout=5, headers={'User-Agent': f"MCP_Geoportal/{__version__}"}
+    )
+

@@ -1,4 +1,7 @@
 import argparse
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 import logging
 import time
 from typing import Union
@@ -6,6 +9,7 @@ from typing import Union
 import httpx
 import uvicorn
 from mcp.server import MCPServer
+from mcp.server.mcpserver import Context
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -13,11 +17,30 @@ from starlette.responses import JSONResponse, Response
 from mcp_geoportal import __version__
 import mcp_geoportal.tools
 
+START_TIME = time.time()
+
+# Lifespan
+@dataclass
+class AppContext:
+    http_client : httpx.AsyncClient
+
+@asynccontextmanager
+async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
+    """Läuft einmal beim Start des Servers, Cleanup beim Stop."""
+    client = httpx.AsyncClient(
+        timeout=5, headers={'User-Agent': f"MCP_Geoportal/{__version__}"}
+    )
+    try:
+        yield AppContext(http_client=client)
+    finally:
+        await client.aclose()
+
 # Server-Instanz
 mcp = MCPServer(
     "Geoportal des Kantons Bern",
+    lifespan=app_lifespan
 )
-START_TIME = time.time()
+
 
 # Logging initialisieren
 logger = logging.getLogger("MCP_Geoportal_Logger")
@@ -98,8 +121,9 @@ def get_geoproducts() -> list[dict]:
     name="Suche_Themen_OEREB_Kataster",
     description="""Fragt im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab.""",
 )
-async def get_oereb_themes() -> dict[str, str]:
-    return await mcp_geoportal.tools.__get_oereb_themes(EXTERNAL_APIS)
+async def get_oereb_themes(ctx: Context[AppContext]) -> dict[str, str]:
+    http_client = ctx.request_context.lifespan_context.http_client
+    return await mcp_geoportal.tools.__get_oereb_themes(EXTERNAL_APIS, http_client)
 
 
 @mcp.tool(
@@ -107,8 +131,9 @@ async def get_oereb_themes() -> dict[str, str]:
     description="""Erstellt für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und liest alle vorhandenen Eigentumsbeschränkungen aus.
         Als Input wird der E-GRID benötigt.""",
 )
-async def get_oereb_auszug(egrid: str) -> Union[str, dict]:
-    return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS)
+async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> Union[str, dict]:
+    http_client = ctx.request_context.lifespan_context.http_client
+    return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS, http_client)
 
 # BASE-Tools
 
@@ -117,8 +142,9 @@ async def get_oereb_auszug(egrid: str) -> Union[str, dict]:
     description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
 )
 async def get_bfsnr_for_gemeinde(
-    searchtext: str) -> Union[int, dict]:
-    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS)
+    searchtext: str, ctx: Context[AppContext]) -> Union[int, dict]:
+    http_client = ctx.request_context.lifespan_context.http_client
+    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(searchtext, EXTERNAL_APIS, http_client)
 
 @mcp.tool(
     name="Suche_EGRID_fuer_Adresse",
@@ -126,9 +152,10 @@ async def get_bfsnr_for_gemeinde(
     sowie die X- und Y-Koordinate zurück.""",
 )
 async def get_egrid_from_address(
-    searchtext: str,
+    searchtext: str, ctx: Context[AppContext]
 ) -> Union[dict[str, float, float], dict]:
-    return await mcp_geoportal.tools.__get_egrid_from_address(searchtext, EXTERNAL_APIS)
+    http_client = ctx.request_context.lifespan_context.http_client
+    return await mcp_geoportal.tools.__get_egrid_from_address(searchtext, EXTERNAL_APIS, http_client)
 
 # GP-Tools
 

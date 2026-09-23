@@ -3,14 +3,13 @@ import httpx
 
 logger = logging.getLogger("MCP_Geoportal_Logger")
 
-async def __get_oereb_themes(api_definitions: dict) -> dict[str, str]:
+async def __get_oereb_themes(api_definitions: dict, client: httpx.AsyncClient) -> dict[str, str]:
     """Frage im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab."""
     url = f"{api_definitions['oereb_server']['api_url']}/capabilities/json"
 
     try:
-        async with httpx.AsyncClient() as client:
-            result = await client.get(url)
-            result.raise_for_status()
+        result = await client.get(url)
+        result.raise_for_status()
     except httpx.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Themenliste vom ÖREB-Server")
@@ -33,7 +32,7 @@ async def __get_oereb_themes(api_definitions: dict) -> dict[str, str]:
 
     return result_dict
 
-async def __get_oereb_auszug(egrid: str, api_definitions: dict) -> str:
+async def __get_oereb_auszug(egrid: str, api_definitions: dict, client: httpx.AsyncClient) -> str:
     """Erstelle für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und lies alle vorhandenen Eigentumsbeschränkungen aus.
 
     Args:
@@ -42,9 +41,8 @@ async def __get_oereb_auszug(egrid: str, api_definitions: dict) -> str:
     """
     url = f"{api_definitions['oereb_server']['api_url']}/extract/xml?egrid={egrid}&lang=de"
     try:
-        async with httpx.AsyncClient() as client:
-            result = await client.get(url)
-            result.raise_for_status()
+        result = await client.get(url)
+        result.raise_for_status()
     except httpx.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen eines ÖREB-Auszugs vom ÖREB-Server")
