@@ -1,5 +1,5 @@
 import pytest
-from mcp_geoportal.tools import __get_bfsnr_for_gemeinde, __get_egrid_from_address
+from mcp_geoportal.tools import __get_bfsnr_for_gemeinde, __get_egrid_from_address, __get_geoproducts
 
 
 @pytest.mark.anyio
@@ -49,3 +49,11 @@ async def test_egrid_from_address_multiple_address(multiple_address, api_definit
     assert "hinweis" in result
     assert "optionen" in result
     assert isinstance(result["optionen"], list)
+
+@pytest.mark.anyio
+async def test_get_geoproducts(api_definitions, http_client):
+    result = await __get_geoproducts(api_definitions, http_client)
+
+    assert len(result) > 0
+    assert 'code' in result[0].keys()
+    

@@ -47,3 +47,12 @@ async def test_egrid_for_address_mcp_multiple_address(multiple_address, mcp_sess
     assert "hinweis" in result.structured_content["result"]
     assert "optionen" in result.structured_content["result"]
     assert isinstance(result.structured_content["result"]["optionen"], list)    
+
+@pytest.mark.anyio
+async def test_get_geoproducts_mcp(mcp_session):
+    result = await mcp_session.call_tool("Hole_Geoprodukte")
+
+    result_content = result.structured_content["result"]
+
+    assert len(result_content) > 0
+    assert 'code' in result_content[0].keys()

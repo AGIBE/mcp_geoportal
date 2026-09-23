@@ -121,3 +121,22 @@ async def __get_egrid_from_address(
             "hinweis": "Adresse nicht gefunden. Bitte nach einer anderen Adresse suchen."
         }
 
+async def __get_geoproducts(api_definitions: dict, client: httpx.AsyncClient) -> list[dict[str, str]]:
+    """Gibt alle Geoprodukte aus dem MWH zurück (Code und Bezeichnung)
+
+    Args:
+        api_definitions (dict): _description_
+        client (httpx.AsyncClient): _description_
+
+    Returns:
+        list[dict[str, str]]: Liste von Dicts (jeweils code und bezeichnung)
+    """
+    url_geoproducts = f"{api_definitions['metawarehouse']['api_url']}/geoportal_geoproduct?select=code,name"        
+    mwh_result = await client.get(url_geoproducts)
+    result_list = []
+    mwh_json = mwh_result.json()
+    for gpr in mwh_json:
+        gpr_dict = {"code": gpr["code"], "bezeichnung": gpr["name"]["de"]}
+        result_list.append(gpr_dict)
+
+    return result_list

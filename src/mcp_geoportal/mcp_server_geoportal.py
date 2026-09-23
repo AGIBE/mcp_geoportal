@@ -113,25 +113,6 @@ async def version(request: Request) -> Response:
         }
     )
 
-
-@mcp.tool()
-def get_geoproducts() -> list[dict]:
-    """Frage im Metawarehouse des Geoportals alle Geoprodukte des Kantons Bern ab.
-
-    Returns:
-        list[str]: Eine Liste mit den Codes und Bezeichnungen aller Geoprodukte
-    """
-    url = f"{EXTERNAL_APIS['metawarehouse']['api_url']}/geoportal_geoproduct?select=code,name"
-    logger.info(url)
-    mwh_result = httpx.get(url)
-    result_list = []
-    mwh_json = mwh_result.json()
-    for gpr in mwh_json:
-        gpr_dict = {"code": gpr["code"], "bezeichnung": gpr["name"]["de"]}
-        result_list.append(gpr_dict)
-
-    return result_list
-
 # ÖREB-Tools
 
 @mcp.tool(
@@ -153,6 +134,19 @@ async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> Union[str, d
     return await mcp_geoportal.tools.__get_oereb_auszug(egrid, EXTERNAL_APIS, http_client)
 
 # BASE-Tools
+
+@mcp.tool(
+        name="Hole_Geoprodukte",
+        description="Holt alle Geoprodukte des Kantons Bern. Es wird eine Liste mit Dictionaries zurückgegeben. Der Dictionary enthält jeweils den Geoprodukt-Code und die -Bezeichnung."
+)
+async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
+    """Frage im Metawarehouse des Geoportals alle Geoprodukte des Kantons Bern ab.
+
+    Returns:
+        list[str]: Eine Liste mit den Codes und Bezeichnungen aller Geoprodukte
+    """
+    http_client = ctx.request_context.lifespan_context.http_client
+    return await mcp_geoportal.tools.__get_geoproducts(EXTERNAL_APIS, http_client)
 
 @mcp.tool(
     name="Suche_BFSNR_zu_Gemeinde",
