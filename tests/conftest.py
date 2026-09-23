@@ -4,8 +4,7 @@ import pytest
 from mcp import ClientSession
 from mcp.client import Client
 from mcp.client.streamable_http import streamable_http_client
-from mcp_geoportal.mcp_server_geoportal import mcp
-from mcp_geoportal.mcp_server_geoportal import USER_AGENT, DUCKDB_EXTENSIONS
+from mcp_geoportal.mcp_server_geoportal import DUCKDB_EXTENSIONS, USER_AGENT, mcp
 
 
 def pytest_addoption(parser):

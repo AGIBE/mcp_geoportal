@@ -1,6 +1,5 @@
 import logging
 import re
-from typing import Union
 
 import httpx
 
@@ -13,7 +12,7 @@ logger = logging.getLogger("MCP_Geoportal_Logger")
 
 async def __get_bfsnr_for_gemeinde(
     searchtext: str, api_definitions: dict, client: httpx.AsyncClient
-) -> Union[int, dict]:
+) -> int | dict:
     """
     Args:
         searchtext (str): Suchtext mit dem nach der BFS-Nummer gesucht wird (Format: Gemeindename).
@@ -59,7 +58,7 @@ async def __get_bfsnr_for_gemeinde(
 
 async def __get_egrid_from_address(
     searchtext: str, api_definitions: dict, client: httpx.AsyncClient
-) -> Union[dict[str, float, float], dict]:
+) -> dict[str, float, float] | dict:
     """
     Args:
         searchtext (str): Suchtext mit dem nach der Adresse gesucht wird (Format: Strasse Nr., Gemeinde).

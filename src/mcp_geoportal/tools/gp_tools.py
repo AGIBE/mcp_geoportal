@@ -1,6 +1,7 @@
 import json
 
 import duckdb
+
 from .create_map_link import get_map_link
 
 # TODO: AED-Standort: Wo sind die nächste AED-Standort?
@@ -94,9 +95,7 @@ async def __get_naturgefahren_for_egrid(
     for row in results:
         json_str = row[0]
         item = json.loads(json_str)
-        if item.get("gefahr") not in result_dict:
-            result_dict[item.get("gefahr")] = item.get("stufe")
-        elif (
+        if item.get("gefahr") not in result_dict or (
             item.get("gefahr") in result_dict
             and item.get("stufe") > result_dict[item.get("gefahr")]
         ):

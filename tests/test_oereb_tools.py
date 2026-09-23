@@ -1,5 +1,6 @@
 import pytest
-from mcp_geoportal.tools import __get_oereb_themes, __get_oereb_auszug
+from mcp_geoportal.tools import __get_oereb_auszug, __get_oereb_themes
+
 from helpers import is_well_formed_xml
 
 

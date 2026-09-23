@@ -1,8 +1,7 @@
 import pytest
-
 from mcp_geoportal.tools import (
-    __get_gemeinde_infos,
     __get_bohrprofile_for_egrid,
+    __get_gemeinde_infos,
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
 )

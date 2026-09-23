@@ -1,10 +1,9 @@
 import argparse
+import logging
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-import logging
-import time
-from typing import Union
 
 import duckdb
 import httpx
@@ -15,8 +14,8 @@ from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from mcp_geoportal import __version__
 import mcp_geoportal.tools
+from mcp_geoportal import __version__
 
 START_TIME = time.time()
 USER_AGENT = f"MCP_Geoportal/{__version__}"
@@ -127,7 +126,7 @@ async def get_oereb_themes(ctx: Context[AppContext]) -> dict[str, str]:
     description="""Erstellt für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und liest alle vorhandenen Eigentumsbeschränkungen aus.
         Als Input wird der E-GRID benötigt.""",
 )
-async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> Union[str, dict]:
+async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> str | dict:
     http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_oereb_auszug(
         egrid, EXTERNAL_APIS, http_client
@@ -157,7 +156,7 @@ async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
 )
 async def get_bfsnr_for_gemeinde(
     searchtext: str, ctx: Context[AppContext]
-) -> Union[int, dict]:
+) -> int | dict:
     http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(
         searchtext, EXTERNAL_APIS, http_client
@@ -171,7 +170,7 @@ async def get_bfsnr_for_gemeinde(
 )
 async def get_egrid_from_address(
     searchtext: str, ctx: Context[AppContext]
-) -> Union[dict[str, float, float], dict]:
+) -> dict[str, float, float] | dict:
     http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_egrid_from_address(
         searchtext, EXTERNAL_APIS, http_client
