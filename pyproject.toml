@@ -32,5 +32,6 @@ dev = [
     "anyio>=4.11.0",
     "build>=1.6.0",
     "pytest>=9.1.1",
+    "pytest-randomly>=5.0.0",
 ]
 

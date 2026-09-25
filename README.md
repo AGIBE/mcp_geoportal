@@ -29,3 +29,9 @@ Achtung: dieses Vorgehen braucht recht viel Diskplatz und läuft evtl. nur mit e
 - Einführung zu MCP: https://medium.com/@laurentkubaski/mcp-explained-45312250b161
 - Offizielle MCP-Seite: https://modelcontextprotocol.io/docs/getting-started/intro
 - Python SDK für MCP: https://github.com/modelcontextprotocol/python-sdk
+
+# Deployment
+Der MCP-Server kann als Docker-Container betrieben werden (s. Dockerfile). Das Deployment erwartet folgende Umgebungsvariablen:
+- MCP_WORKERS: Anzahl Worker in uvicorn
+- MCP_MAX_REQUESTS: Maximale Anzahl Requests bis ein Worker restarted wird
+- HTTP_PROXY / HTTPS_PROXY: Proxy-Konfiguration (für Aufrufen der externen APIs)

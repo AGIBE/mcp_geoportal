@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -26,7 +27,8 @@ DUCKDB_EXTENSIONS = ("spatial", "httpfs")
 def _init_duckdb() -> duckdb.DuckDBPyConnection:
     """Initialisiert die DuckDB-Connection insb. werden die benötigten Extensions installiert und geladen."""
     conn = duckdb.connect(database=":memory:", config={"custom_user_agent": USER_AGENT})
-
+    # Seit v1.5.3 erkennt DuckDB die Umgebungsvariable HTTP_PROXY.
+    # Daher muss hier der Proxy nicht mehr explizit gesetzt werden.
     for ext in DUCKDB_EXTENSIONS:
         conn.install_extension(ext)
         conn.load_extension(ext)
@@ -43,6 +45,8 @@ class AppContext:
 @asynccontextmanager
 async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
     """Läuft einmal beim Start des Servers, Cleanup beim Stop."""
+    # httpx berücksichtigt gemäss Doku die Umgebungsvariable HTTP_PROXY
+    # Daher muss hier der Proxy nicht mehr explizit gesetzt werden.
     client = httpx.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
     db = _init_duckdb()
     try:
@@ -250,6 +254,18 @@ async def get_property_info_for_egrid(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCP Server Geoportal")
+    # Die Anzahl der parallelen Worker kann eingestellt. Jeder Worker
+    # braucht ein gewisses Mass an Ressourcen (RAM/CPU). Daher ist mehr
+    # nicht gleich besser.
+    number_of_workers = int(os.getenv("MCP_WORKERS", 2))
+    logger.info(f"Number of Uvicorn-workers: {number_of_workers}")
+    # Es kann sein, dass der Server über die Zeit immer mehr RAM
+    # beansprucht (Memory Leak). Deshalb wird jeder Worker nach
+    # einer bestimmten Anzahl Requests (max_requests) neugestartet.
+    # Der Jitter bewirkt, nicht alle Worker gleichzeitig restarten.
+    max_requests = int(os.getenv("MCP_MAX_REQUESTS", 500))
+    max_requests_jitter = 50
+    logger.info(f"Max number of requests: {max_requests}")
     parser.add_argument(
         "--mode",
         choices=["stdio", "http"],
@@ -275,7 +291,9 @@ if __name__ == "__main__":
             app,
             host="0.0.0.0",
             port=6789,
-            workers=2,
+            workers=number_of_workers,
+            limit_max_requests=max_requests,
+            limit_max_requests_jitter=max_requests_jitter,
             timeout_keep_alive=300,
             access_log=True,
         )
