@@ -12,6 +12,7 @@ import uvicorn
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
 from mcp.server.transport_security import TransportSecuritySettings
+from mcp.types.version import MODERN_PROTOCOL_VERSIONS
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -22,6 +23,27 @@ START_TIME = time.time()
 USER_AGENT = f"MCP_Geoportal/{__version__}"
 DUCKDB_EXTENSIONS = ("spatial", "httpfs")
 
+def log_access(ctx: Context, name: str) -> None:
+    """Loggt Zugriffsmodus und Protokollversion für einen Handler-Aufruf."""
+    if ctx.headers is None:
+        logger.info("%s | req=%s | transport=stdio (keine Sessions)", name, ctx.request_id)
+        return
+
+    headers = {k.lower(): v for k, v in ctx.headers.items()}
+    version = headers.get("mcp-protocol-version")
+    session_id = headers.get("mcp-session-id")
+
+    if version in MODERN_PROTOCOL_VERSIONS:
+        mode = "stateless (modern, sessionlos)"
+    elif session_id:
+        mode = "stateful (Legacy-Session)"
+    else:
+        mode = "stateless (Legacy, stateless_http=True)"
+
+    logger.info(
+        "%s | req=%s | modus=%s | protokoll=%s | session=%s",
+        name, ctx.request_id, mode, version or "-", session_id or "-",
+    )
 
 # Lifespan
 def _init_duckdb() -> duckdb.DuckDBPyConnection:
@@ -161,6 +183,7 @@ async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
 async def get_bfsnr_for_gemeinde(
     searchtext: str, ctx: Context[AppContext]
 ) -> int | dict:
+    log_access(ctx, "Suche_BFSNR_zu_Gemeinde")
     http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(
         searchtext, EXTERNAL_APIS, http_client
