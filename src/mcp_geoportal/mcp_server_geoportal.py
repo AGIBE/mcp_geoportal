@@ -308,7 +308,8 @@ if __name__ == "__main__":
         app = mcp.streamable_http_app(
             transport_security=TransportSecuritySettings(
                 enable_dns_rebinding_protection=False
-            )
+            ),
+            stateless_http=True
         )
         config = uvicorn.Config(
             app,
