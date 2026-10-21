@@ -1,12 +1,12 @@
 import logging
 
-import httpx
+import httpx2
 
 logger = logging.getLogger("MCP_Geoportal_Logger")
 
 
 async def __get_oereb_themes(
-    api_definitions: dict, client: httpx.AsyncClient
+    api_definitions: dict, client: httpx2.AsyncClient
 ) -> dict[str, str]:
     """Frage im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab."""
     url = f"{api_definitions['oereb_server']['api_url']}/capabilities/json"
@@ -14,7 +14,7 @@ async def __get_oereb_themes(
     try:
         result = await client.get(url)
         result.raise_for_status()
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Themenliste vom ÖREB-Server")
         logger.error(f"URL: {url}")
@@ -38,7 +38,7 @@ async def __get_oereb_themes(
 
 
 async def __get_oereb_auszug(
-    egrid: str, api_definitions: dict, client: httpx.AsyncClient
+    egrid: str, api_definitions: dict, client: httpx2.AsyncClient
 ) -> str:
     """Erstelle für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und lies alle vorhandenen Eigentumsbeschränkungen aus.
 
@@ -50,7 +50,7 @@ async def __get_oereb_auszug(
     try:
         result = await client.get(url)
         result.raise_for_status()
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen eines ÖREB-Auszugs vom ÖREB-Server")
         logger.error(f"URL: {url}")

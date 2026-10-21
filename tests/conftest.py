@@ -1,5 +1,5 @@
 import duckdb
-import httpx
+import httpx2
 import pytest
 from mcp import ClientSession
 from mcp.client import Client
@@ -137,8 +137,8 @@ def egrid_invalid() -> str:
 
 
 @pytest.fixture
-def http_client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
+def http_client() -> httpx2.AsyncClient:
+    return httpx2.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
 
 
 @pytest.fixture

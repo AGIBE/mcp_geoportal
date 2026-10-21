@@ -1,7 +1,7 @@
 import logging
 import re
 
-import httpx
+import httpx2
 
 logger = logging.getLogger("MCP_Geoportal_Logger")
 
@@ -11,7 +11,7 @@ logger = logging.getLogger("MCP_Geoportal_Logger")
 
 
 async def __get_bfsnr_for_gemeinde(
-    searchtext: str, api_definitions: dict, client: httpx.AsyncClient
+    searchtext: str, api_definitions: dict, client: httpx2.AsyncClient
 ) -> int | dict:
     """
     Args:
@@ -24,7 +24,7 @@ async def __get_bfsnr_for_gemeinde(
 
     try:
         result = await client.get(url_search, params=params)
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Suche.")
         logger.error(f"URL: {url_search}")
@@ -57,7 +57,7 @@ async def __get_bfsnr_for_gemeinde(
 
 
 async def __get_egrid_from_address(
-    searchtext: str, api_definitions: dict, client: httpx.AsyncClient
+    searchtext: str, api_definitions: dict, client: httpx2.AsyncClient
 ) -> dict[str, float, float] | dict:
     """
     Args:
@@ -74,7 +74,7 @@ async def __get_egrid_from_address(
 
     try:
         result = await client.get(url_search, params=params)
-    except httpx.RequestError as exc:
+    except httpx2.RequestError as exc:
         # Irgendein Fehler wurde zurückgegeben
         logger.error("Fehler beim Abrufen der ÖREB-Suche.")
         logger.error(f"URL: {url_search}")
@@ -94,7 +94,7 @@ async def __get_egrid_from_address(
             url_oereb = f"{api_definitions['oereb_server']['api_url']}/getegrid/json/?EN={x},{y}"
             try:
                 result = await client.get(url_oereb)
-            except httpx.RequestError as exc:
+            except httpx2.RequestError as exc:
                 # Irgendein Fehler wurde zurückgegeben
                 logger.error("Fehler beim Abrufen des EGRIDs vom ÖREB-Servers.")
                 logger.error(f"URL: {url_oereb}")
@@ -122,13 +122,13 @@ async def __get_egrid_from_address(
 
 
 async def __get_geoproducts(
-    api_definitions: dict, client: httpx.AsyncClient
+    api_definitions: dict, client: httpx2.AsyncClient
 ) -> list[dict[str, str]]:
     """Gibt alle Geoprodukte aus dem MWH zurück (Code und Bezeichnung)
 
     Args:
         api_definitions (dict): _description_
-        client (httpx.AsyncClient): _description_
+        client (httpx2.AsyncClient): _description_
 
     Returns:
         list[dict[str, str]]: Liste von Dicts (jeweils code und bezeichnung)

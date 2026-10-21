@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 
 import duckdb
-import httpx
+import httpx2
 import uvicorn
 from mcp.server import MCPServer
 from mcp.server.mcpserver import Context
@@ -37,16 +37,16 @@ def _init_duckdb() -> duckdb.DuckDBPyConnection:
 
 @dataclass
 class AppContext:
-    http_client: httpx.AsyncClient
+    http_client: httpx2.AsyncClient
     db: duckdb.DuckDBPyConnection
 
 
 @asynccontextmanager
 async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
     """Läuft einmal beim Start des Servers, Cleanup beim Stop."""
-    # httpx berücksichtigt gemäss Doku die Umgebungsvariable HTTP_PROXY
+    # httpx2 berücksichtigt gemäss Doku die Umgebungsvariable HTTP_PROXY
     # Daher muss hier der Proxy nicht mehr explizit gesetzt werden.
-    client = httpx.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
+    client = httpx2.AsyncClient(timeout=5, headers={"User-Agent": USER_AGENT})
     db = _init_duckdb()
     try:
         yield AppContext(http_client=client, db=db)

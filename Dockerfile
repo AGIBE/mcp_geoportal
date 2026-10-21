@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------- Stage 1: Builder ----------
-FROM python:3.14.7-slim AS builder
+FROM python:3.14.8-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.9 /uv /uvx /bin/
 
@@ -22,7 +22,7 @@ COPY . .
 RUN uv sync --frozen --no-dev
 
 # ---------- Stage 2: Runtime ----------
-FROM python:3.14.7-slim AS runtime
+FROM python:3.14.8-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
@@ -38,7 +38,7 @@ COPY --from=builder --chown=appuser:appuser /app /app
 
 USER appuser
 
-RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
+# RUN python -c "import duckdb; duckdb.sql('INSTALL spatial; LOAD spatial;')"
 
 # EXPOSE 6789
 
