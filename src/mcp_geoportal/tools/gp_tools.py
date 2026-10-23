@@ -6,7 +6,7 @@ from .create_map_link import get_map_link
 
 # TODO: AED-Standort: Wo sind die nächste AED-Standort?
 # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
-# TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen? - Geschütztes Geoprodukt (kein Parquet-File vorhanden)
+# TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen (SEIN_UNUEBAU)?
 # TODO: Freies Übernachten/Biwakieren (z.B. darf ich am Hinterburgseeli biwakieren)?
 # TODO: Suchdienst für Orts-, Flur- und Geländenamen (liefert Koordinaten zurück) - Suchfunktion Geodat-Tools
 # TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück) - z.B. wo ist das Rütihubelbad?
