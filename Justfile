@@ -14,7 +14,7 @@ local:
 
 # Startet den MCP-Server lokal (stdio) und den MCP-Inspector
 local_dev:
-    npx @modelcontextprotocol/inspector uv --directory C:/Daten/repos/mcp_geoportal run python src/mcp_geoportal/mcp_server_geoportal.py
+    npx @modelcontextprotocol/inspector uv run python src/mcp_geoportal/mcp_server_geoportal.py
 
 # Startet den MCP-Server als Webservice
 server:

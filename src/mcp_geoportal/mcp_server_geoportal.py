@@ -18,11 +18,35 @@ from starlette.responses import JSONResponse, Response
 import mcp_geoportal.tools
 from mcp_geoportal import __version__
 
+# =================================================================================================
+# Konstanten
+# =================================================================================================
+
 START_TIME = time.time()
 USER_AGENT = f"MCP_Geoportal/{__version__}"
 DUCKDB_EXTENSIONS = ("spatial", "httpfs")
+EXTERNAL_APIS = {
+    "metawarehouse": {
+        "api_url": "https://www.metawarehouse.apps.be.ch",
+        "readyness_url": "https://www.metawarehouse.apps.be.ch",
+    },
+    "oereb_server": {
+        "api_url": "https://www.oereb2.apps.be.ch",
+        "readyness_url": "https://www.oereb2.apps.be.ch/version",
+    },
+    "geofiles": {
+        "api_url": "https://geofiles.be.ch",
+        "readyness_url": "https://geofiles.be.ch/readyness.txt",
+    },
+}
 
+
+# =================================================================================================
 # Lifespan
+# =================================================================================================
+# (s. https://py.sdk.modelcontextprotocol.io/handlers/lifespan/?h=lifespan)
+# Ressourcen, die beim Server-Startup initialisiert werden und
+# von allen Tools über den Context genutzt werden können
 def _init_duckdb() -> duckdb.DuckDBPyConnection:
     """Initialisiert die DuckDB-Connection insb. werden die benötigten Extensions installiert und geladen."""
     conn = duckdb.connect(database=":memory:", config={"custom_user_agent": USER_AGENT})
@@ -54,67 +78,17 @@ async def app_lifespan(server: MCPServer) -> AsyncIterator[AppContext]:
         await client.aclose()
 
 
-# Server-Instanz
+# Server-Instanz initialisieren
 mcp = MCPServer("Geoportal des Kantons Bern", lifespan=app_lifespan)
 
 
 # Logging initialisieren
 logger = logging.getLogger("MCP_Geoportal_Logger")
 
-# Constants
-EXTERNAL_APIS = {
-    "metawarehouse": {
-        "api_url": "https://www.metawarehouse.apps.be.ch",
-        "readyness_url": "https://www.metawarehouse.apps.be.ch",
-    },
-    "oereb_server": {
-        "api_url": "https://www.oereb2.apps.be.ch",
-        "readyness_url": "https://www.oereb2.apps.be.ch/version",
-    },
-    "geofiles": {
-        "api_url": "https://geofiles.be.ch",
-        "readyness_url": "https://geofiles.be.ch/readyness.txt",
-    },
-}
 
-
-@mcp.custom_route("/ready", methods=["GET"])
-async def readiness(request: Request) -> JSONResponse:
-    readyness_urls = {name: api["readyness_url"] for name, api in EXTERNAL_APIS.items()}
-    results = await mcp_geoportal.tools.check_external_apis(readyness_urls)
-    all_ok = all(r.ok for r in results)
-    body = {
-        "status": "ready" if all_ok else "not_ready",
-        "checks": {
-            r.name: {
-                "ok": r.ok,
-                "url": r.url,
-                **({"error": r.error} if r.error else {}),
-            }
-            for r in results
-        },
-    }
-    return JSONResponse(body, status_code=200 if all_ok else 503)
-
-
-@mcp.custom_route("/live", methods=["GET"])
-async def liveness(request: Request) -> Response:
-    return JSONResponse(
-        {
-            "status": "ok",
-            "uptime_s": round(time.time() - START_TIME, 1),
-        }
-    )
-
-
-@mcp.custom_route("/version", methods=["GET"])
-async def version(request: Request) -> Response:
-    return JSONResponse({"version": f"{__version__}"})
-
-
+# =================================================================================================
 # ÖREB-Tools
-
-
+# =================================================================================================
 @mcp.tool(
     name="Suche_Themen_OEREB_Kataster",
     description="""Fragt im ÖREB-Kataster des Kantons Bern alle verfügbaren Themen ab.""",
@@ -136,9 +110,9 @@ async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> str | dict:
     )
 
 
-# BASE-Tools
-
-
+# =================================================================================================
+# Base-Tools
+# =================================================================================================
 @mcp.tool(
     name="Hole_Geoprodukte",
     description="Holt alle Geoprodukte des Kantons Bern. Es wird eine Liste mit Dictionaries zurückgegeben. Der Dictionary enthält jeweils den Geoprodukt-Code und die -Bezeichnung.",
@@ -180,9 +154,9 @@ async def get_egrid_from_address(
     )
 
 
+# =================================================================================================
 # GP-Tools
-
-
+# =================================================================================================
 @mcp.tool(
     name="Hole_Gemeindeinfos_zu_BFSNummer",
     description="""Ermittelt für die übergebene BFS-Nummer einer Gemeinde im Kanton Bern statistische und administrative Informationen, unter anderem die Fläche, Einwohnerzahl und Bevölkerungsdichte pro ha und Steueranlage.
@@ -251,18 +225,64 @@ async def get_property_info_for_egrid(
     )
 
 
+# =================================================================================================
+# CUSTOM-ROUTES
+# =================================================================================================
+# Custom-Routes sind Endpunkte, die ausserhalb der MCP-Funktionalität angeboten werden. Hier:
+# - readyness
+# - liveness
+# - version
+
+
+@mcp.custom_route("/ready", methods=["GET"])
+async def readiness(request: Request) -> JSONResponse:
+    readyness_urls = {name: api["readyness_url"] for name, api in EXTERNAL_APIS.items()}
+    results = await mcp_geoportal.tools.check_external_apis(readyness_urls)
+    all_ok = all(r.ok for r in results)
+    body = {
+        "status": "ready" if all_ok else "not_ready",
+        "checks": {
+            r.name: {
+                "ok": r.ok,
+                "url": r.url,
+                **({"error": r.error} if r.error else {}),
+            }
+            for r in results
+        },
+    }
+    return JSONResponse(body, status_code=200 if all_ok else 503)
+
+
+@mcp.custom_route("/live", methods=["GET"])
+async def liveness(request: Request) -> Response:
+    return JSONResponse(
+        {
+            "status": "ok",
+            "uptime_s": round(time.time() - START_TIME, 1),
+        }
+    )
+
+
+@mcp.custom_route("/version", methods=["GET"])
+async def version(request: Request) -> Response:
+    return JSONResponse({"version": f"{__version__}"})
+
+
+# =================================================================================================
+# Server-Start
+# =================================================================================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MCP Server Geoportal")
     # Die Anzahl der parallelen Worker kann eingestellt. Jeder Worker
     # braucht ein gewisses Mass an Ressourcen (RAM/CPU). Daher ist mehr
     # nicht gleich besser.
-    number_of_workers = int(os.getenv("MCP_WORKERS", 2))
+    number_of_workers = int(os.getenv("MCP_WORKERS", "2"))
     logger.info(f"Number of Uvicorn-workers: {number_of_workers}")
     # Es kann sein, dass der Server über die Zeit immer mehr RAM
     # beansprucht (Memory Leak). Deshalb wird jeder Worker nach
     # einer bestimmten Anzahl Requests (max_requests) neugestartet.
-    # Der Jitter bewirkt, nicht alle Worker gleichzeitig restarten.
-    max_requests = int(os.getenv("MCP_MAX_REQUESTS", 500))
+    # Der Jitter bewirkt, dass nicht alle Worker gleichzeitig restarten.
+    max_requests = int(os.getenv("MCP_MAX_REQUESTS", "500"))
     max_requests_jitter = 50
     logger.info(f"Max number of requests: {max_requests}")
     parser.add_argument(
@@ -287,7 +307,7 @@ if __name__ == "__main__":
             transport_security=TransportSecuritySettings(
                 enable_dns_rebinding_protection=False
             ),
-            stateless_http=True
+            stateless_http=True,
         )
         config = uvicorn.Config(
             app,

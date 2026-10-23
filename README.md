@@ -18,7 +18,7 @@ Der MCP-Server kann mit dem im SDK eingebauten MCP Inspector (Webapplikation) ge
 Im Justfile sind noch eine Reihe weiterer Commands definiert, die das Debuggen erleichtern. Sie sind im Justfile dokumentiert.
 
 # Test-Suite
-Der MCP-Server hat eine Reihe von Tests, die mit pytest ausgeführt werden können. Für jedes MCP-Tool gibt es Tests auf Stufe MCP - d.h. der Test wird via MCP gemacht - und auf Stufe der Funktion ohne MCP-Overhead. Dazu gibt es noch allgemeine Tests (test_general.py). 
+Der MCP-Server hat eine Reihe von Tests, die mit pytest ausgeführt werden können. Für jedes MCP-Tool gibt es Tests auf Stufe MCP - d.h. der Test wird via MCP gemacht - und auf Stufe der Funktion ohne MCP-Overhead.
 
 # Integration in Claude Desktop
 Damit Claude Desktop den MCP-Server erkennt, muss dieser ihm per Config-File bekannt gemacht werden. Ein Beispiel ist im Repository abgelegt (claude_desktop_config.json). Die Pfade darin sind bei Bedarf (Pfad zu uv und der Pfad zum Repository) anzupassen. Das File wird im Verzeichnis C:\Users\[USERID]\AppData\Roaming\Claude abgelegt. Wenn alle Pfade stimmen, dann wird Claude den MCP-Server beim Aufstarten erkennen und diesen starten. In Claude Desktop ist der MCP-Server dann unter den Konnektoren zu finden.
