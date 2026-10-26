@@ -224,6 +224,21 @@ async def get_property_info_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
+@mcp.tool(
+    name="Hole_Koordinaten_von_Flurname",
+    description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen.
+        Args:
+            search_string (str): Der Flurname für die Abfrage.
+        Returns:
+            dict: Ein Dictionary mit den Koordinaten.""",
+)
+async def get_coordinates_from_nomkl(
+    search_string: str, ctx: Context[AppContext]
+) -> dict:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_coordinates_from_nomkl(
+        search_string, EXTERNAL_APIS, db
+    )
 
 # =================================================================================================
 # CUSTOM-ROUTES

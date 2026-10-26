@@ -10,5 +10,6 @@ from .gp_tools import (
     __get_gemeinde_infos,
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
+    __get_coordinates_from_nomkl,
 )
 from .oereb_tools import __get_oereb_auszug, __get_oereb_themes

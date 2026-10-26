@@ -150,3 +150,37 @@ async def __get_property_info_for_egrid(
         cursor.close()
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link
+
+async def __get_coordinates_from_nomkl(
+    search_string: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
+) -> dict:
+    """
+    Holt die Koordinaten für einen Flurnamen.
+
+    Args:
+        search_string (str): Der Suchstring für die Abfrage.
+
+    Returns:
+        dict: Ein Dictionary mit den Koordinaten.
+    """
+    cursor = con.cursor()
+    spatial_sql = f"""
+                    select
+                    nfn.gemname, nfn.flurname, nfn.bbox.min_x, nfn.bbox.max_x, nfn.bbox.min_y, nfn.bbox.max_y
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_flurname.parquet' nfn
+                    where nfn.flurname = '{search_string}'
+                """
+    cursor.execute(spatial_sql)
+    try:
+        cursor.execute(spatial_sql)
+        results = cursor.fetchall()
+        if not results:
+            return ([{}], "")
+        columns = [desc[0] for desc in cursor.description]
+    finally:
+        cursor.close()
+    dicts = [dict(zip(columns, row)) for row in results]
+    for dict_i in dicts:
+        map_link = get_map_link("get_coordinates_from_nomkl", dict_i)
+        dict_i["map_link"] = map_link
+    return dicts
