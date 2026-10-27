@@ -163,7 +163,7 @@ async def __get_coordinates_from_nomkl(
     dicts = []
     # Hier könnte ein Filter für einzelne Datenquellen implementiert werden, falls nur bestimmte Layer abgefragt werden sollen.
     source_names = ["Ortsname", "Flurname", "Geländename"]
-    layer_names = ['ortsname', 'flurname', 'gelname']
+    layer_names = ["ortsname", "flurname", "gelname"]
     for index,data_name in enumerate(layer_names):
         spatial_sql = f"""
                     select
@@ -187,7 +187,7 @@ async def __get_coordinates_from_nomkl(
         
         
     if  len(dicts) == 0:
-        dicts.append({'feedback': "Hinweis: Die Bezeichnung wurde nicht gefunden"})
+        dicts.append({"feedback": "Hinweis: Die Bezeichnung wurde nicht gefunden"})
     else:
         for dict_j in dicts:
             map_link = get_map_link("get_coordinates_from_nomkl", dict_j)
