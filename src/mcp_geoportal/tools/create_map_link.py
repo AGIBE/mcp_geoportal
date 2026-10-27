@@ -43,32 +43,47 @@ def get_map_link(name_function: str, params: dict) -> str:
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}"
     
     if name_function == "get_coordinates_from_nomkl":
-        lang = "de"
-        min_x = params.get("min_x")
-        max_x = params.get("max_x")
-        min_y = params.get("min_y")
-        max_y = params.get("max_y")
-        
-        deltax = (max_x - min_x) if min_x is not None and max_x is not None else None
-        deltay = (max_y - min_y) if min_y is not None and max_y is not None else None
-        centerx = min_x + deltax / 2 if min_x is not None and deltax is not None else None
-        centery = min_y + deltay / 2 if min_y is not None and deltay is not None else None
-        
-        if deltax is None or deltay is None:
-            scale = 1000
-        else:
-            if deltax > deltay:
-                usdelta = deltax
-            else:
-                usdelta = deltay
-        if deltax is not None and deltay is not None:
-            if usdelta < 100:
-                scale = 1000
-            elif usdelta < 1000:
-                scale = 5000
-            else:
-                scale = 10000
+        lang = params.get("lang", "de")
+        centerx, centery = get_center_from_bbox(params)
+        scale = get_scale_from_bbox(params)
         url = f"&addcrosshair=true&scale={scale}&lang={lang}&center={centerx},{centery}&theme=HK_BUNT&gpk=NOMKL_GPK"
-
     full_url = base_url + url
     return full_url
+
+def get_center_from_bbox(params: dict):
+    min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
+    deltax, deltay = get_deltas_from_bbox(params)
+    centerx = min_x + deltax / 2 if min_x is not None and deltax is not None else None
+    centery = min_y + deltay / 2 if min_y is not None and deltay is not None else None
+    return centerx, centery
+
+def get_coords_from_bbox(params: dict):
+    min_x = params.get("min_x")
+    max_x = params.get("max_x")
+    min_y = params.get("min_y")
+    max_y = params.get("max_y")
+    return min_x, max_x, min_y, max_y
+
+def get_deltas_from_bbox(params: dict):
+    min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
+    deltax = (max_x - min_x) if min_x is not None and max_x is not None else None
+    deltay = (max_y - min_y) if min_y is not None and max_y is not None else None
+    return deltax, deltay
+
+def get_scale_from_bbox(params:dict):
+    min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
+    deltax, deltay = get_deltas_from_bbox(params)
+    if deltax is None or deltay is None:
+        scale = 1000
+    else:
+        if deltax > deltay:
+            usdelta = deltax
+        else:
+            usdelta = deltay
+        if usdelta < 100:
+            scale = 1000
+        elif usdelta < 1000:
+            scale = 5000
+        else:
+            scale = 10000
+    return scale

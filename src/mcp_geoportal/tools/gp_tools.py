@@ -8,7 +8,6 @@ from .create_map_link import get_map_link
 # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
 # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen (SEIN_UNUEBAU)?
 # TODO: Freies Übernachten/Biwakieren (z.B. darf ich am Hinterburgseeli biwakieren)?
-# TODO: Suchdienst für Orts-, Flur- und Geländenamen (liefert Koordinaten zurück) - Suchfunktion Geodat-Tools
 # TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück) - z.B. wo ist das Rütihubelbad?
 # TODO: Abfragen von Erdbebenzonen für EGRID (WMS der swisstopo mit getFeatureInfo auf https://wms.geo.admin.ch) -> evtl. Anreichern bei Naturgefahrenabfrage
 # TODO: Abragen aktueller Messdaten von Oberflächengewässern oder Luftqualität (klären, ob es API auf Messnetze gibt)
@@ -155,32 +154,39 @@ async def __get_coordinates_from_nomkl(
     search_string: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
-    Holt die Koordinaten für einen Flurnamen.
-
-    Args:
-        search_string (str): Der Suchstring für die Abfrage.
+    Liefert die Koordinaten und die Gemeindezugehörigkeit für einen Flurnamen, Ortsnamen oder Geländenamen aus dem Nomenklatur Geoprodukt (NOMKL).
 
     Returns:
         dict: Ein Dictionary mit den Koordinaten.
     """
     cursor = con.cursor()
-    spatial_sql = f"""
+    dicts = []
+    # Hier könnte ein Filter für einzelne Datenquellen implementiert werden, falls nur bestimmte Layer abgefragt werden sollen.
+    source_names = ["Ortsname", "Flurname", "Geländename"]
+    layer_names = ['ortsname', 'flurname', 'gelname']
+    for idi,data_name in enumerate(layer_names):
+        spatial_sql = f"""
                     select
-                    nfn.gemname, nfn.flurname, nfn.bbox.min_x, nfn.bbox.max_x, nfn.bbox.min_y, nfn.bbox.max_y
-                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_flurname.parquet' nfn
-                    where nfn.flurname = '{search_string}'
+                    {data_name}.gemname, {data_name}.{data_name}, {data_name}.bbox.min_x, {data_name}.bbox.max_x, {data_name}.bbox.min_y, {data_name}.bbox.max_y
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet' {data_name}
+                    where {data_name}.{data_name} = '{search_string}'
                 """
-    cursor.execute(spatial_sql)
-    try:
-        cursor.execute(spatial_sql)
-        results = cursor.fetchall()
-        if not results:
-            return ([{}], "")
-        columns = [desc[0] for desc in cursor.description]
-    finally:
-        cursor.close()
-    dicts = [dict(zip(columns, row)) for row in results]
-    for dict_i in dicts:
-        map_link = get_map_link("get_coordinates_from_nomkl", dict_i)
-        dict_i["map_link"] = map_link
+        try:
+            cursor.execute(spatial_sql)
+            results = cursor.fetchall()
+            if results:
+                columns = [desc[0] for desc in cursor.description]
+                dicts_i = [dict(zip(columns, row)) for row in results]
+                for d in dicts_i:
+                    d["source"] = source_names[idi]
+                # Hier könnter noch center-x, center-y und scale aus der bbox eingefügt werden
+                dicts.append(dicts_i)
+        except Exception:
+            continue
+    cursor.close()
+        
+    for dict_list in dicts:
+        for dict_j in dict_list:
+            map_link = get_map_link("get_coordinates_from_nomkl", dict_j)
+            dict_j["map_link"] = map_link
     return dicts

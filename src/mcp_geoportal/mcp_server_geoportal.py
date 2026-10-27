@@ -225,12 +225,10 @@ async def get_property_info_for_egrid(
     )
 
 @mcp.tool(
-    name="Hole_Koordinaten_von_Flurname",
-    description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen.
-        Args:
-            search_string (str): Der Flurname für die Abfrage.
+    name="Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen",
+    description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen, Ortsnamen oder Geländenamen.
         Returns:
-            dict: Ein Dictionary mit den Koordinaten.""",
+            dict: Ein Dictionary mit den Koordinaten der Bounding Box, derGemeindezugehörigkeit und dem Datentyp (Ortsname, Flurname, Geländename).""",
 )
 async def get_coordinates_from_nomkl(
     search_string: str, ctx: Context[AppContext]
