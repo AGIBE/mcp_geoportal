@@ -228,11 +228,19 @@ async def get_property_info_for_egrid(
     name="Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen",
     description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen, Ortsnamen oder Geländenamen.
         Returns:
-            dict: Ein Dictionary mit den Koordinaten der Bounding Box, derGemeindezugehörigkeit und dem Datentyp (Ortsname, Flurname, Geländename).""",
+            list[dict]: Jedes Dictionary enthält die Keys: 
+                                - Gemeindename: Gemeindezugehörigkeit,
+                                - min_x: Minimale X-Koordinate der Bounding Box,
+                                - max_x: Maximale X-Koordinate der Bounding Box,
+                                - min_y: Minimale Y-Koordinate der Bounding Box,
+                                - max_y: Maximale Y-Koordinate der Bounding Box,
+                                - Datentyp: Ortsname, Flurname, Geländename,
+                                - Kartenlink: Link zur Kartenansicht im Geoportal des Kantons Bern
+            """,
 )
 async def get_coordinates_from_nomkl(
     search_string: str, ctx: Context[AppContext]
-) -> dict:
+) -> list[dict]:
     db = ctx.request_context.lifespan_context.db
     return await mcp_geoportal.tools.__get_coordinates_from_nomkl(
         search_string, EXTERNAL_APIS, db

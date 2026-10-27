@@ -164,10 +164,10 @@ async def __get_coordinates_from_nomkl(
     # Hier könnte ein Filter für einzelne Datenquellen implementiert werden, falls nur bestimmte Layer abgefragt werden sollen.
     source_names = ["Ortsname", "Flurname", "Geländename"]
     layer_names = ['ortsname', 'flurname', 'gelname']
-    for idi,data_name in enumerate(layer_names):
+    for index,data_name in enumerate(layer_names):
         spatial_sql = f"""
                     select
-                    {data_name}.gemname, {data_name}.{data_name}, {data_name}.bbox.min_x, {data_name}.bbox.max_x, {data_name}.bbox.min_y, {data_name}.bbox.max_y
+                    {data_name}.gemname AS Gemeindename, {data_name}.{data_name} as Datentyp, {data_name}.bbox.min_x, {data_name}.bbox.max_x, {data_name}.bbox.min_y, {data_name}.bbox.max_y
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet' {data_name}
                     where {data_name}.{data_name} = '{search_string}'
                 """
@@ -178,15 +178,20 @@ async def __get_coordinates_from_nomkl(
                 columns = [desc[0] for desc in cursor.description]
                 dicts_i = [dict(zip(columns, row)) for row in results]
                 for d in dicts_i:
-                    d["source"] = source_names[idi]
+                    d["source"] = source_names[index]
+                    dicts.append(d)
                 # Hier könnter noch center-x, center-y und scale aus der bbox eingefügt werden
-                dicts.append(dicts_i)
         except Exception:
+            print(f"Error executing spatial SQL for {data_name}: {spatial_sql}")
             continue
-    cursor.close()
         
-    for dict_list in dicts:
-        for dict_j in dict_list:
+        
+    if  len(dicts) == 0:
+        dicts.append({'feedback': "Hinweis: Die Bezeichnung wurde nicht gefunden"})
+    else:
+        for dict_j in dicts:
             map_link = get_map_link("get_coordinates_from_nomkl", dict_j)
-            dict_j["map_link"] = map_link
+            dict_j["Kartenlink"] = map_link
+    cursor.close()
+    
     return dicts

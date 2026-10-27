@@ -164,11 +164,11 @@ def bfnsr_invalid() -> int:
     return 666666
 
 @pytest.fixture
-def search_string_valid() -> str:
+def nomkl_string_valid() -> str:
     """Suchstring, der ein eindeutiges Ergebnis zurückgibt."""
     return "Ischmeer"
 
 @pytest.fixture
-def search_string_invalid() -> str:
+def nomkl_string_invalid() -> str:
     """Suchstring, der kein Ergebnis zurückgibt."""
     return "asdfasdfsfadfa"

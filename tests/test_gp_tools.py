@@ -29,26 +29,25 @@ async def test_get_gemeinde_infos_invalid_bfsnr(
 
     
 @pytest.mark.anyio
-async def test_get_coordinates_from_nomkl_invalid(
-    search_string_valid, api_definitions, duckdb_connection
+async def test_get_coordinates_from_nomkl_valid(
+    nomkl_string_valid, api_definitions, duckdb_connection
 ):
-    result = await __get_coordinates_from_nomkl(
-        search_string_valid, api_definitions, duckdb_connection
+    result_list = await __get_coordinates_from_nomkl(
+        nomkl_string_valid, api_definitions, duckdb_connection
     )
     
-    assert result == []
+    assert "Gemeindename" in result_list[0].keys()
 
 
 @pytest.mark.anyio
 async def test_get_coordinates_from_nomkl_invalid(
-    search_string_invalid, api_definitions, duckdb_connection
+    nomkl_string_invalid, api_definitions, duckdb_connection
 ):
     result_list = await __get_coordinates_from_nomkl(
-        search_string_invalid, api_definitions, duckdb_connection
+        nomkl_string_invalid, api_definitions, duckdb_connection
     )
 
-    assert result_list == []
-
+    assert "feedback" in result_list[0].keys()
 
 @pytest.mark.anyio
 async def test_get_bohrprofile_egrid_valid(

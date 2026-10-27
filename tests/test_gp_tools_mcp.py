@@ -19,6 +19,24 @@ async def test_get_gemeinde_infos_mcp_invalid_bfsnr(mcp_session, bfnsr_invalid):
     result_content = result.structured_content
 
     assert result_content == {}
+    
+@pytest.mark.anyio
+async def test_get_coordinates_from_nomkl_mcp_valid(mcp_session, nomkl_string_valid):
+    result = await mcp_session.call_tool(
+        "Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen", {"search_string": nomkl_string_valid}
+    )
+    result_content = result.structured_content["result"]
+
+    assert "Gemeindename" in result_content[0].keys()
+    
+@pytest.mark.anyio
+async def test_get_coordinates_from_nomkl_mcp_invalid(mcp_session, nomkl_string_invalid):
+    result = await mcp_session.call_tool(
+        "Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen", {"search_string": nomkl_string_invalid}
+    )
+    result_content = result.structured_content["result"]
+
+    assert "feedback" in result_content[0].keys()
 
 
 @pytest.mark.anyio
