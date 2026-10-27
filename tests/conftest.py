@@ -162,3 +162,13 @@ def bfnsr_valid() -> int:
 def bfnsr_invalid() -> int:
     """Nicht existierende BFS-Nummer"""
     return 666666
+
+@pytest.fixture
+def search_string_valid() -> str:
+    """Suchstring, der ein eindeutiges Ergebnis zurückgibt."""
+    return "Ischmeer"
+
+@pytest.fixture
+def search_string_invalid() -> str:
+    """Suchstring, der kein Ergebnis zurückgibt."""
+    return "asdfasdfsfadfa"

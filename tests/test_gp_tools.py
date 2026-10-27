@@ -4,6 +4,7 @@ from mcp_geoportal.tools import (
     __get_gemeinde_infos,
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
+    __get_coordinates_from_nomkl
 )
 
 
@@ -25,6 +26,28 @@ async def test_get_gemeinde_infos_invalid_bfsnr(
     )
 
     assert result == {}
+
+    
+@pytest.mark.anyio
+async def test_get_coordinates_from_nomkl_invalid(
+    search_string_valid, api_definitions, duckdb_connection
+):
+    result = await __get_coordinates_from_nomkl(
+        search_string_valid, api_definitions, duckdb_connection
+    )
+    
+    assert result == []
+
+
+@pytest.mark.anyio
+async def test_get_coordinates_from_nomkl_invalid(
+    search_string_invalid, api_definitions, duckdb_connection
+):
+    result_list = await __get_coordinates_from_nomkl(
+        search_string_invalid, api_definitions, duckdb_connection
+    )
+
+    assert result_list == []
 
 
 @pytest.mark.anyio
