@@ -225,6 +225,51 @@ async def get_property_info_for_egrid(
     )
 
 
+@mcp.tool(
+    name="Hole_Erdbebenrisiko_zu_EGRID",
+    description="""Ermittelt das Erdbebenrisiko auf einem Grundstück.
+        Args:
+            egrid (str): E-GRID, für den das Erdbebenrisiko ermittelt werden soll.
+        Returns:
+            dict: Dictionnary mit der Erdbebengefährdungszone am Mittelpunkt des Grundstücks und der Baugrundklasse
+               (Maximum über das Grundstück) für die EGRID.
+            str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern.""",
+)
+async def get_erdbeben_risiko_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[dict, str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_erdbeben_risiko_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
+
+@mcp.tool(
+    name="Hole_nächste_AED_Standorte_zu_EGRID",
+    description="""Ermittelt die nach Luftlinie nächsten AED-Standorte zu einem Grundstück.
+        Args:
+            egrid (str): E-GRID, für den die nächstgelegenen AED-Standorte ermittelt werden sollen.
+        Returns:
+            list[dict]: Eine Liste mit einem Dictionnary zu jedem AED-Standort im Umkreis von 2000 m, sortiert nach aufsteigender Entfernung.
+                Jeder Dictionnary hat 8 Keys:
+                    - Adresse: Strasse und Hausnummer des AED-Standorts
+                    - Ortschaft: Ortschaft, in der der AED-Standort liegt
+                    - Telefon: Telefonnummer des Standorts
+                    - Titel: Bezeichnung des Standorts (z.B. Name des Schulhauses oder des Geschäfts im Gebäude)
+                    - Beschreibung: Beschreibung des genauen Zugangs zum AED-Gerät
+                    - Erreichbarkeit: Angabe, ob der AED-Standort immer öffentlich zugänglich ist ("24h") oder nur zeitweise ("Zeitweise öffentlich")
+                    - Zugang: Angabe der Zeiten, zu denen der AED-Standort zugänglich ist
+                    - Entfernung: Distanz Luftlinie zwischen der E-GRID und dem AED-Standort in Metern
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_aed_standorte_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[list[dict], str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_aed_standorte_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
 # =================================================================================================
 # CUSTOM-ROUTES
 # =================================================================================================

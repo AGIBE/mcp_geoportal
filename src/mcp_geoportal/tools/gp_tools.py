@@ -1,6 +1,9 @@
 import json
 
 import duckdb
+import rasterio # rasterio und requests musste ich noch ins venv installieren
+from rasterio.mask import mask
+import requests
 
 from .create_map_link import get_map_link
 
@@ -150,3 +153,100 @@ async def __get_property_info_for_egrid(
         cursor.close()
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link
+
+async def __get_erdbeben_risiko_for_egrid(
+        egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
+) -> dict:
+    """
+    FRK
+    """
+    cursor = con.cursor()
+    result = dict()
+
+    # EGRID Geometrie holen
+    spatial_sql = f"""
+                    select ST_AsGeoJSON(lif.geometry) as egrid_mask, ST_AsGeoJSON(ST_Centroid(lif.geometry)) as egrid_centroid
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
+                    where lif.egrid = '{egrid}'
+                    """
+    # Erdbebengefährdungszone
+    try:
+        cursor.execute(spatial_sql)
+        egrid_mask, egrid_centroid = cursor.fetchone()
+        egrid_mask = json.loads(egrid_mask)
+        egrid_centroid = json.loads(egrid_centroid)
+
+        # Erdbebengefahrenzone mit GetFeatureInfo aus dem WMS von swisstopo, für den Mittelpunkt der Parzelle
+        # für den Verschnitt mit der ganzen Parzelle müssten die Daten als gdb heruntergeladen werden?
+        layer = "ch.bafu.gefahren-gefaehrdungszonen"
+        e, n = egrid_centroid["coordinates"][:2]
+        r = requests.get("https://wms.geo.admin.ch/", params={
+            "SERVICE": "WMS", "VERSION": "1.3.0", "REQUEST": "GetFeatureInfo",
+            "LAYERS": layer, "QUERY_LAYERS": layer,
+            "CRS": "EPSG:2056",
+            "BBOX": f"{e-50},{n-50},{e+50},{n+50}",
+            "WIDTH": 101, "HEIGHT": 101, "I": 50, "J": 50,
+            "INFO_FORMAT": "application/json; subtype=geojson",
+        }, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        features = data.get("features", [])
+        zone = features[0]["properties"]["zone"] if features else None
+        result["Gefährdungszone"] = zone
+
+    finally:
+        cursor.close()
+
+    # Baugrundklasse: nur die maximale Mächtigkeit Lockergestein über alle Pixel in der EGRID-Geometrie auslesen
+    with rasterio.open(f"{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/FRK/frk_sediras.tif") as file:
+        data, transform = mask(
+                                file,
+                                [egrid_mask],
+                                crop=True,
+                                all_touched=True,
+                                filled=False,         
+                            )
+    max_sediment_depth = data.max()
+
+    # Mächtigkeit Lockergestein auf Baugrundklasse umrechnen
+    if max_sediment_depth <= 5:
+        baugrundklasse = "Klasse A"
+    elif max_sediment_depth <= 20:
+        baugrundklasse = "Klasse E"
+    else:
+        baugrundklasse = "Klasse B+C+D"
+    result["Baugrundklasse"] = baugrundklasse
+
+    # Karte nur für die Baugrundklasse anzeigen? Erdbebenzone mit GANALYSE_GEFAHRGM_KMGDM21 in eine zweite Karte?
+    map_link = get_map_link("get_baugrundklasse_for_egrid", {"egrid": egrid})
+    return result, map_link
+
+
+async def __get_aed_standorte_for_egrid(
+        egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
+) -> dict:
+    """
+    AEDSTO_AEDSTO
+    """
+    cursor = con.cursor()
+    spatial_sql = f"""
+                    select
+                    aed.adresse as Adresse, aed.ortschaft as Ortschaft, aed.telefon as Telefon, aed.titel as Titel, aed.beschreib as Beschreibung, aed.zugzeit as Erreichbarkeit, aed.zugang as Zugang, round(ST_Distance(lif.geometry, aed.geometry)) as Entfernung
+                        from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
+                        join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/AEDSTO/aedsto_aedsto.parquet' aed on ST_Intersects(lif.geometry, ST_Buffer(aed.geometry, 2000))
+                        where lif.egrid = '{egrid}' and aed.zugzeit = '24h'
+                        order by Entfernung asc limit 1
+                    """
+    # reicht Luftlinie als Entfernungsangabe? gibt auch Geoprodukte zur Erreichbarkeit (AEDFALLE, AEDFOPEN), ist aber nicht so genau für Standorte innerhalb von Gebäuden?
+    # nur den allernächsten immer offenen Standort angeben oder auch die zeitweise öffentlichen Standorte?
+    try:
+        cursor.execute(spatial_sql)
+        results = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        dicts = [dict(zip(columns, row)) for row in results]
+        if not results:
+            return ({}, "")
+    finally:
+        cursor.close()
+    map_link = get_map_link("get_aed_standorte_for_egrid", {"egrid": egrid})
+    return dicts, map_link

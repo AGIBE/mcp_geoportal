@@ -42,5 +42,17 @@ def get_map_link(name_function: str, params: dict) -> str:
         lang = params.get("lang", "de")
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}"
 
+    if name_function == "get_baugrundklasse_for_egrid":
+        egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
+        scale = params.get("scale", 1000)
+        lang = params.get("lang", "de")
+        url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=FRK_SEDIRAS_KMGDM2&legend=True"
+
+    if name_function == "get_aed_standorte_for_egrid":
+        egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
+        scale = params.get("scale", 1000)
+        lang = params.get("lang", "de")
+        url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=AEDSTO_AEDSTO_KMGDM1,AEDSTO_AEDSTO_KMGDM2&legend=True"
+
     full_url = base_url + url
     return full_url
