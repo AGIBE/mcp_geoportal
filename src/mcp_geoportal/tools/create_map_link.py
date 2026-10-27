@@ -51,13 +51,15 @@ def get_map_link(name_function: str, params: dict) -> str:
     return full_url
 
 def get_center_from_bbox(params: dict):
-    min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
+    """Berechnet das Zentrum der Bounding-Box."""
+    min_x, _, min_y, _ = get_coords_from_bbox(params)
     deltax, deltay = get_deltas_from_bbox(params)
     centerx = min_x + deltax / 2 if min_x is not None and deltax is not None else None
     centery = min_y + deltay / 2 if min_y is not None and deltay is not None else None
     return centerx, centery
 
 def get_coords_from_bbox(params: dict):
+    """Liest die Koordinaten der Bounding-Box aus dem Parameter dict."""
     min_x = params.get("min_x")
     max_x = params.get("max_x")
     min_y = params.get("min_y")
@@ -65,13 +67,14 @@ def get_coords_from_bbox(params: dict):
     return min_x, max_x, min_y, max_y
 
 def get_deltas_from_bbox(params: dict):
+    """Berechnet die Deltas (Breite und Höhe) der Bounding-Box."""
     min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
     deltax = (max_x - min_x) if min_x is not None and max_x is not None else None
     deltay = (max_y - min_y) if min_y is not None and max_y is not None else None
     return deltax, deltay
 
 def get_scale_from_bbox(params:dict):
-    min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
+    """Definiert den Kartenausschnitt-Massstab basierend auf den Bounding-Box Werten."""
     deltax, deltay = get_deltas_from_bbox(params)
     if deltax is None or deltay is None:
         scale = 1000
