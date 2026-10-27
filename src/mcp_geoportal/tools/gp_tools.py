@@ -216,6 +216,8 @@ async def __get_erdbeben_risiko_for_egrid(
     else:
         baugrundklasse = "Klasse B+C+D"
     result["Baugrundklasse"] = baugrundklasse
+    if not result:
+        return ({}, "")
 
     # Karte nur für die Baugrundklasse anzeigen? Erdbebenzone mit GANALYSE_GEFAHRGM_KMGDM21 in eine zweite Karte?
     map_link = get_map_link("get_baugrundklasse_for_egrid", {"egrid": egrid})
@@ -242,10 +244,10 @@ async def __get_aed_standorte_for_egrid(
     try:
         cursor.execute(spatial_sql)
         results = cursor.fetchall()
+        if not results:
+            return([{}], "")
         columns = [desc[0] for desc in cursor.description]
         dicts = [dict(zip(columns, row)) for row in results]
-        if not results:
-            return ({}, "")
     finally:
         cursor.close()
     map_link = get_map_link("get_aed_standorte_for_egrid", {"egrid": egrid})
