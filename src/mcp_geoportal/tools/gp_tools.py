@@ -154,74 +154,134 @@ async def __get_property_info_for_egrid(
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link
 
-async def __get_erdbeben_risiko_for_egrid(
+async def __get_erdbebenrisiko_for_egrid(
         egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
-    FRK
+    FRK_SEDIRAS
     """
     cursor = con.cursor()
     result = dict()
 
     # EGRID Geometrie holen
     spatial_sql = f"""
-                    select ST_AsGeoJSON(lif.geometry) as egrid_mask, ST_AsGeoJSON(ST_Centroid(lif.geometry)) as egrid_centroid
+                    select ST_AsGeoJSON(lif.geometry) as egrid_mask
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                     where lif.egrid = '{egrid}'
                     """
-    # Erdbebengefährdungszone
+
     try:
         cursor.execute(spatial_sql)
-        egrid_mask, egrid_centroid = cursor.fetchone()
+        egrid_mask = cursor.fetchone()[0]
         egrid_mask = json.loads(egrid_mask)
-        egrid_centroid = json.loads(egrid_centroid)
 
-        # Erdbebengefahrenzone mit GetFeatureInfo aus dem WMS von swisstopo, für den Mittelpunkt der Parzelle
-        # für den Verschnitt mit der ganzen Parzelle müssten die Daten als gdb heruntergeladen werden?
-        layer = "ch.bafu.gefahren-gefaehrdungszonen"
-        e, n = egrid_centroid["coordinates"][:2]
-        r = requests.get("https://wms.geo.admin.ch/", params={
-            "SERVICE": "WMS", "VERSION": "1.3.0", "REQUEST": "GetFeatureInfo",
-            "LAYERS": layer, "QUERY_LAYERS": layer,
-            "CRS": "EPSG:2056",
-            "BBOX": f"{e-50},{n-50},{e+50},{n+50}",
-            "WIDTH": 101, "HEIGHT": 101, "I": 50, "J": 50,
-            "INFO_FORMAT": "application/json; subtype=geojson",
-        }, timeout=30)
-        r.raise_for_status()
-        data = r.json()
-        features = data.get("features", [])
-        zone = features[0]["properties"]["zone"] if features else None
-        result["Gefährdungszone"] = zone
+        # Erdbebengefährdungszone von Swisstopo WMS für den nördlichsten, östlichsten, südlichsten, westlichsten Punkt der Parzelle
+        corner_points = get_corner_points(egrid_mask, con)
+        zone_list = []
+
+        for point in corner_points:
+            zone = query_swisstopo(point)
+            zone_list.append(zone)
+        result["Gefährdungszone"] = max(zone_list) # mögliche Zonen: Z1a, Z1b, Z2, Z3a, Z3b, mit alphabetischer Sortierung kommt die risikoreichste Zone als Maximum zurück
+
+        # Baugrundklasse: nur die maximale Mächtigkeit Lockergestein über alle Pixel in der EGRID-Geometrie auslesen
+        with rasterio.open(f"{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/FRK/frk_sediras.tif") as file:
+            data, transform = mask(
+                                    file,
+                                    [egrid_mask],
+                                    crop=True,
+                                    all_touched=True,
+                                    filled=False,         
+                                )
+        max_sediment_depth = data.max()
+
+        if max(zone_list) is None or max_sediment_depth is None:
+            return ({}, "")
+
+        # Mächtigkeit Lockergestein auf Baugrundklasse umrechnen
+        if max_sediment_depth <= 5:
+            baugrundklasse = "Klasse A"
+        elif max_sediment_depth <= 20:
+            baugrundklasse = "Klasse E"
+        else:
+            baugrundklasse = "Klasse B+C+D"
+        result["Baugrundklasse"] = baugrundklasse
+
+    except Exception as e:
+        return ({}, "")
 
     finally:
         cursor.close()
 
-    # Baugrundklasse: nur die maximale Mächtigkeit Lockergestein über alle Pixel in der EGRID-Geometrie auslesen
-    with rasterio.open(f"{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/FRK/frk_sediras.tif") as file:
-        data, transform = mask(
-                                file,
-                                [egrid_mask],
-                                crop=True,
-                                all_touched=True,
-                                filled=False,         
-                            )
-    max_sediment_depth = data.max()
-
-    # Mächtigkeit Lockergestein auf Baugrundklasse umrechnen
-    if max_sediment_depth <= 5:
-        baugrundklasse = "Klasse A"
-    elif max_sediment_depth <= 20:
-        baugrundklasse = "Klasse E"
-    else:
-        baugrundklasse = "Klasse B+C+D"
-    result["Baugrundklasse"] = baugrundklasse
-    if not result:
-        return ({}, "")
-
-    # Karte nur für die Baugrundklasse anzeigen? Erdbebenzone mit GANALYSE_GEFAHRGM_KMGDM21 in eine zweite Karte?
+    # Karte nur für die Baugrundklasse anzeigen?
+    # evtl zweite Karte für die Erdbebenzone?
     map_link = get_map_link("get_baugrundklasse_for_egrid", {"egrid": egrid})
     return result, map_link
+
+def get_corner_points(geometry, con):
+    """
+    Gibt den nördlichsten, östlichsten, südlichsten, westlichsten Punkt einer Geometrie jeweils als Tuple (x-Koordinate, y-Koordinate)
+     zurück.
+    
+    Args:
+        geometry (str): Geometrie als GeoJSON-string.
+    Returns:
+        corner_points (list): Liste der Punkte.
+    """
+    cursor = con.cursor()
+    corners_sql = f"""
+                    with points as (
+                            select unnest(ST_Dump(ST_points(ST_GeomFromGeoJSON({geometry})))).geom as p),
+                        corners as (
+                            select arg_max(p, ST_X(p)) as ost,
+                                arg_min(p, ST_X(p)) as west,
+                                arg_max(p, ST_Y(p)) as nord,
+                                arg_min(p, ST_Y(p)) as sued
+                            from points)
+                    select
+                        (ST_X(ost), ST_Y(ost)) AS ost,
+                        (ST_X(west), ST_Y(west)) AS west,
+                        (ST_X(nord), ST_Y(nord)) AS nord,
+                        (ST_X(sued), ST_Y(sued)) AS sued
+                    FROM corners
+                    """
+    try:
+        cursor.execute(corners_sql)
+        corner_points = cursor.fetchone()
+    finally:
+        cursor.close()
+
+    return corner_points
+
+def query_swisstopo(point, layer = "ch.bafu.gefahren-gefaehrdungszonen"):
+    """
+    Führt einen GetFeatureInfo Request auf den gewünschten Layer des WMS von swisstopo aus.
+    
+    Args:
+        - point (tuple): Punkt als Tuple (x-Koordinate, y-Koordinate), der abgefragt werden soll.
+        - layer (str): Bezeichnung des Layers, der abgefragt wird.
+    Returns:
+        - value (str): Resultat der Abfrage, None falls kein Resultat zurückkam.
+    """
+    
+    e, n = point
+    r = requests.get("https://wms.geo.admin.ch/", params={
+        "SERVICE": "WMS", "VERSION": "1.3.0", "REQUEST": "GetFeatureInfo",
+        "LAYERS": layer, "QUERY_LAYERS": layer,
+        "CRS": "EPSG:2056",
+        "BBOX": f"{e-50},{n-50},{e+50},{n+50}",
+        "WIDTH": 101, "HEIGHT": 101, "I": 50, "J": 50,
+        "INFO_FORMAT": "application/json; subtype=geojson",
+    }, timeout=30)
+    try:
+        r.raise_for_status()
+        data = r.json()
+        features = data.get("features", [])
+        value = features[0]["properties"]["zone"] if features else None
+    except:
+        value = None
+
+    return value
 
 
 async def __get_aed_standorte_for_egrid(
@@ -236,11 +296,11 @@ async def __get_aed_standorte_for_egrid(
                     aed.adresse as Adresse, aed.ortschaft as Ortschaft, aed.telefon as Telefon, aed.titel as Titel, aed.beschreib as Beschreibung, aed.zugzeit as Erreichbarkeit, aed.zugang as Zugang, round(ST_Distance(lif.geometry, aed.geometry)) as Entfernung
                         from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                         join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/AEDSTO/aedsto_aedsto.parquet' aed on ST_Intersects(lif.geometry, ST_Buffer(aed.geometry, 2000))
-                        where lif.egrid = '{egrid}' and aed.zugzeit = '24h'
-                        order by Entfernung asc limit 1
+                        where lif.egrid = '{egrid}'
+                        order by Entfernung asc
                     """
     # reicht Luftlinie als Entfernungsangabe? gibt auch Geoprodukte zur Erreichbarkeit (AEDFALLE, AEDFOPEN), ist aber nicht so genau für Standorte innerhalb von Gebäuden?
-    # nur den allernächsten immer offenen Standort angeben oder auch die zeitweise öffentlichen Standorte?
+    # besser nur den allernächsten Standort angeben? oder nur solche, die jederzeit verfügbar sind (aed.zugang = '24h')?
     try:
         cursor.execute(spatial_sql)
         results = cursor.fetchall()

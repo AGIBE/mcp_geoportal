@@ -10,7 +10,7 @@ from .gp_tools import (
     __get_gemeinde_infos,
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
-    __get_erdbeben_risiko_for_egrid,
+    __get_erdbebenrisiko_for_egrid,
     __get_aed_standorte_for_egrid,
 )
 from .oereb_tools import __get_oereb_auszug, __get_oereb_themes

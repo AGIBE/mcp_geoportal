@@ -231,22 +231,24 @@ async def get_property_info_for_egrid(
         Args:
             egrid (str): E-GRID, für den das Erdbebenrisiko ermittelt werden soll.
         Returns:
-            dict: Dictionnary mit der Erdbebengefährdungszone am Mittelpunkt des Grundstücks und der Baugrundklasse
-               (Maximum über das Grundstück) für die EGRID.
+            dict: Dictionnary mit der Erdbebenzone der Norm SIA 261 "Einwirkungen auf Tragwerke" (Key Gefährdungszone)
+                und der Baugrundklasse (Key Baugrundklasse). Der Wert für die Erdbebenzone wird aus dem Maximum der Werte am
+                nördlichsten, östlichsten, südlichsten und westlichsten Punkt des Grundstücks berechnet, die Baugrundklasse
+                aus dem Maximum über das gesamte Grundstück.
             str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern.""",
 )
-async def get_erdbeben_risiko_for_egrid(
+async def get_erdbebenrisiko_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_erdbeben_risiko_for_egrid(
+    return await mcp_geoportal.tools.__get_erdbebenrisiko_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
 
 @mcp.tool(
-    name="Hole_nächste_AED_Standorte_zu_EGRID",
-    description="""Ermittelt die nach Luftlinie nächsten AED-Standorte zu einem Grundstück.
+    name="Hole_naechste_AED_Standorte_zu_EGRID",
+    description="""Ermittelt die nach Luftlinie nächstgelegenen AED-Standorte zu einem Grundstück.
         Args:
             egrid (str): E-GRID, für den die nächstgelegenen AED-Standorte ermittelt werden sollen.
         Returns:

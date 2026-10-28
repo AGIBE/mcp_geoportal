@@ -5,6 +5,7 @@ from mcp_geoportal.tools import (
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
     __get_aed_standorte_for_egrid,
+    __get_erdbebenrisiko_for_egrid
 )
 
 
@@ -109,7 +110,7 @@ async def test_get_aed_standorte_egrid_valid(
         )
     
     assert map_link.startswith("https://www.topo.apps.be.ch")
-    assert "Adresse" in result_dict[0].keys() #Funktion gibt Liste mit Standorten zurück
+    assert "Adresse" in result_dict[0].keys() # Funktion gibt Liste mit Standorten zurück
 
 @pytest.mark.anyio
 async def test_get_aed_standorte_egrid_invalid(
@@ -121,3 +122,26 @@ async def test_get_aed_standorte_egrid_invalid(
 
     assert map_link == ""
     assert result_dict == [{}]
+
+
+@pytest.mark.anyio
+async def test_get_erdbebenrisiko_egrid_valid(
+    egrid_valid, api_definitions, duckdb_connection
+):
+    result_dict, map_link = await __get_erdbebenrisiko_for_egrid(
+            egrid_valid, api_definitions, duckdb_connection
+        )
+    
+    assert map_link.startswith("https://www.topo.apps.be.ch")
+    assert "Gefährdungszone" in result_dict.keys()
+
+@pytest.mark.anyio
+async def test_get_erdbebenrisiko_egrid_invalid(
+    egrid_invalid, api_definitions, duckdb_connection
+):
+    result_dict, map_link = await __get_erdbebenrisiko_for_egrid(
+        egrid_invalid, api_definitions, duckdb_connection
+    )
+
+    assert map_link == ""
+    assert result_dict == {}
