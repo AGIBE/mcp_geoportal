@@ -4,8 +4,8 @@ from mcp_geoportal.tools import (
     __get_gemeinde_infos,
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
-    __get_aed_standorte_for_egrid,
-    __get_erdbebenrisiko_for_egrid
+    __get_aed_locations_for_egrid,
+    __get_earthquake_risk_for_egrid
 )
 
 
@@ -102,10 +102,10 @@ async def test_get_property_info_egrid_invalid(
     assert result_dict == {}
 
 @pytest.mark.anyio
-async def test_get_aed_standorte_egrid_valid(
+async def test_get_aed_locations_egrid_valid(
     egrid_valid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_aed_standorte_for_egrid(
+    result_dict, map_link = await __get_aed_locations_for_egrid(
             egrid_valid, api_definitions, duckdb_connection
         )
     
@@ -113,10 +113,10 @@ async def test_get_aed_standorte_egrid_valid(
     assert "Adresse" in result_dict[0].keys() # Funktion gibt Liste mit Standorten zurück
 
 @pytest.mark.anyio
-async def test_get_aed_standorte_egrid_invalid(
+async def test_get_aed_locations_egrid_invalid(
     egrid_invalid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_aed_standorte_for_egrid(
+    result_dict, map_link = await __get_aed_locations_for_egrid(
         egrid_invalid, api_definitions, duckdb_connection
     )
 
@@ -125,10 +125,10 @@ async def test_get_aed_standorte_egrid_invalid(
 
 
 @pytest.mark.anyio
-async def test_get_erdbebenrisiko_egrid_valid(
+async def test_get_earthquake_risk_egrid_valid(
     egrid_valid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_erdbebenrisiko_for_egrid(
+    result_dict, map_link = await __get_earthquake_risk_for_egrid(
             egrid_valid, api_definitions, duckdb_connection
         )
     
@@ -136,10 +136,10 @@ async def test_get_erdbebenrisiko_egrid_valid(
     assert "Gefährdungszone" in result_dict.keys()
 
 @pytest.mark.anyio
-async def test_get_erdbebenrisiko_egrid_invalid(
+async def test_get_earthquake_risk_egrid_invalid(
     egrid_invalid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_erdbebenrisiko_for_egrid(
+    result_dict, map_link = await __get_earthquake_risk_for_egrid(
         egrid_invalid, api_definitions, duckdb_connection
     )
 

@@ -111,7 +111,7 @@ async def test_get_property_info_egrid_mcp_invalid(mcp_session, egrid_invalid):
 
 
 @pytest.mark.anyio
-async def test_get_aed_standorte_egrid_mcp_valid(mcp_session, egrid_valid):
+async def test_get_aed_locations_egrid_mcp_valid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool(
         "Hole_naechste_AED_Standorte_zu_EGRID", {"egrid": egrid_valid}
     )
@@ -126,7 +126,7 @@ async def test_get_aed_standorte_egrid_mcp_valid(mcp_session, egrid_valid):
 
 
 @pytest.mark.anyio
-async def test_get_aed_standorte_egrid_mcp_invalid(mcp_session, egrid_invalid):
+async def test_get_aed_locations_egrid_mcp_invalid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool(
         "Hole_naechste_AED_Standorte_zu_EGRID", {"egrid": egrid_invalid}
     )
@@ -141,7 +141,7 @@ async def test_get_aed_standorte_egrid_mcp_invalid(mcp_session, egrid_invalid):
 
 
 @pytest.mark.anyio
-async def test_get_erdbebenrisiko_egrid_mcp_valid(mcp_session, egrid_valid):
+async def test_get_earthquake_risk_egrid_mcp_valid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool(
         "Hole_Erdbebenrisiko_zu_EGRID", {"egrid": egrid_valid}
     )
@@ -156,7 +156,7 @@ async def test_get_erdbebenrisiko_egrid_mcp_valid(mcp_session, egrid_valid):
 
 
 @pytest.mark.anyio
-async def test_get_erdbebenrisiko_egrid_mcp_invalid(mcp_session, egrid_invalid):
+async def test_get_earthquake_risk_egrid_mcp_invalid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool(
         "Hole_Erdbebenrisiko_zu_EGRID", {"egrid": egrid_invalid}
     )

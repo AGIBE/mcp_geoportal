@@ -154,7 +154,7 @@ async def __get_property_info_for_egrid(
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link
 
-async def __get_erdbebenrisiko_for_egrid(
+async def __get_earthquake_risk_for_egrid(
         egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
@@ -284,7 +284,7 @@ def query_swisstopo(point, layer = "ch.bafu.gefahren-gefaehrdungszonen"):
     return value
 
 
-async def __get_aed_standorte_for_egrid(
+async def __get_aed_locations_for_egrid(
         egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
