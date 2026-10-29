@@ -227,15 +227,17 @@ async def get_property_info_for_egrid(
 
 @mcp.tool(
     name="Hole_Erdbebenrisiko_zu_EGRID",
-    description="""Ermittelt das Erdbebenrisiko auf einem Grundstück.
+    description="""Ermittelt die seismische Gefährdung (Erdbebenzone) und eine vereinfachte Abschätzung der Baugrundklasse eines 
+        Grundstücks gemäss SIA 261. 
         Args:
-            egrid (str): E-GRID, für den das Erdbebenrisiko ermittelt werdenn soll.
+            egrid (str): E-GRID, für den die Parameter ermittelt werden sollen. 
         Returns:
-            dict: Dictionnary mit der Erdbebenzone nach der Norm SIA 261 "Einwirkungen auf Tragwerke" (Key Gefährdungszone)
-                und der Baugrundklasse (Key Baugrundklasse). Der Wert für die Erdbebenzone wird aus dem Maximum der Werte am
-                nördlichsten, östlichsten, südlichsten und westlichsten Punkt des Grundstücks berechnet. Die Baugrundklasse
-                wird aus dem Maximalwert der Mächtigkeit des Lockergesteins über das gesamte Grundstück abgeleitet.
-            str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern.""",
+            dict: Dictionary mit der Erdbebenzone (Key Gefährdungszone) und der hergeleiteten Baugrundklasse (Key Baugrundklasse).
+                Der Wert für die Erdbebenzone wird aus dem Maximum an den vier geografischen Extrempunkten (Nord, Ost, Süd, West) des
+                Grundstücks berechnet. Die Baugrundklasse wird über eine vereinfachte Abschätzung der maximalen Sedimenthöhe auf der
+                Parzelle hergeleitet: Klasse A (< 5 m), Klasse E (<= 20 m), sonst kombinierte Klasse B+C+D.
+            str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern. """
+
 )
 async def get_erdbebenrisiko_for_egrid(
     egrid: str, ctx: Context[AppContext]
@@ -248,7 +250,8 @@ async def get_erdbebenrisiko_for_egrid(
 
 @mcp.tool(
     name="Hole_naechste_AED_Standorte_zu_EGRID",
-    description="""Ermittelt die nach Luftlinie nächstgelegenen AED-Standorte zu einem Grundstück.
+    description="""Ermittelt die nach Luftlinie nächstgelegenen Standorte von automatisierten externen Defibrillatoren (AED)
+        zu einem Grundstück.
         Args:
             egrid (str): E-GRID, für den die nächstgelegenen AED-Standorte ermittelt werden sollen.
         Returns:

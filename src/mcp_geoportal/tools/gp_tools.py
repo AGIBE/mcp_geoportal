@@ -156,66 +156,70 @@ async def __get_property_info_for_egrid(
 
 async def __get_earthquake_risk_for_egrid(
         egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
-) -> dict:
+) -> tuple[dict, str]:
     """
-    FRK_SEDIRAS
+    Ermittelt Erdbebengefährdungszone und Baugrundklasse für ein EGRID.
     """
-    cursor = con.cursor()
-    result = dict()
-
-    # EGRID Geometrie holen
+    result = {}
+    
+    # 1. EGRID Geometrie holen (Sicher mittels Prepared Statement Bindings)
     spatial_sql = f"""
-                    select ST_AsGeoJSON(lif.geometry) as egrid_mask
-                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
-                    where lif.egrid = '{egrid}'
-                    """
+        select ST_AsGeoJSON(lif.geometry) as egrid_mask
+        from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
+        where lif.egrid = ?
+    """
 
     try:
-        cursor.execute(spatial_sql)
-        egrid_mask = cursor.fetchone()[0]
-        egrid_mask = json.loads(egrid_mask)
+        db_res = con.execute(spatial_sql, [egrid]).fetchone()
+        if not db_res:
+            return {}, ""
+            
+        egrid_mask_str = db_res[0]
+        egrid_mask = json.loads(egrid_mask_str)
 
-        # Erdbebengefährdungszone von Swisstopo WMS für den nördlichsten, östlichsten, südlichsten, westlichsten Punkt der Parzelle
-        corner_points = get_corner_points(egrid_mask, con)
-        zone_list = []
+        # 2. Extrempunkte ermitteln und WMS abfragen
+        corner_points = get_corner_points(egrid_mask_str, con)
+        
+        # None-Werte filtern, um Fehler bei max() zu verhindern
+        zone_list = [query_swisstopo(p) for p in corner_points if p is not None]
+        zone_list = [z for z in zone_list if z is not None]
 
-        for point in corner_points:
-            zone = query_swisstopo(point)
-            zone_list.append(zone)
-        result["Gefährdungszone"] = max(zone_list) # mögliche Zonen: Z1a, Z1b, Z2, Z3a, Z3b, mit alphabetischer Sortierung kommt die risikoreichste Zone als Maximum zurück
+        if not zone_list:
+            return {}, ""
+            
+        max_zone = max(zone_list)
+        result["Gefährdungszone"] = max_zone
 
-        # Baugrundklasse: nur die maximale Mächtigkeit Lockergestein über alle Pixel in der EGRID-Geometrie auslesen
-        with rasterio.open(f"{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/FRK/frk_sediras.tif") as file:
-            data, transform = mask(
-                                    file,
-                                    [egrid_mask],
-                                    crop=True,
-                                    all_touched=True,
-                                    filled=False,         
-                                )
+        # 3. Rasteranalyse für Baugrundklasse (Sedimentmächtigkeit)
+        raster_url = f"{api_definitions['geofiles']['api_url']}/geoportal/pub/download/FRK/frk_sediras.tif"
+        with rasterio.open(raster_url) as file:
+            data, _ = mask(
+                file,
+                [egrid_mask],
+                crop=True,
+                all_touched=True,
+                filled=False,         
+            )
+        
         max_sediment_depth = data.max()
+        if max_sediment_depth is None:
+            return {}, ""
 
-        if max(zone_list) is None or max_sediment_depth is None:
-            return ({}, "")
-
-        # Mächtigkeit Lockergestein auf Baugrundklasse umrechnen
+        # Klassierung vornehmen
         if max_sediment_depth <= 5:
             baugrundklasse = "Klasse A"
         elif max_sediment_depth <= 20:
             baugrundklasse = "Klasse E"
         else:
             baugrundklasse = "Klasse B+C+D"
+            
         result["Baugrundklasse"] = baugrundklasse
 
     except Exception as e:
         return ({}, "")
 
-    finally:
-        cursor.close()
-
-    # Karte nur für die Baugrundklasse anzeigen?
-    # evtl zweite Karte für die Erdbebenzone?
-    map_link = get_map_link("get_baugrundklasse_for_egrid", {"egrid": egrid})
+    # 4. Maplink generieren
+    map_link = get_map_link("get_subsoil_class_for_egrid", {"egrid": egrid})
     return result, map_link
 
 def get_corner_points(geometry, con):
@@ -231,7 +235,7 @@ def get_corner_points(geometry, con):
     cursor = con.cursor()
     corners_sql = f"""
                     with points as (
-                            select unnest(ST_Dump(ST_points(ST_GeomFromGeoJSON({geometry})))).geom as p),
+                            select unnest(ST_Dump(ST_points(ST_GeomFromGeoJSON(?)))).geom as p),
                         corners as (
                             select arg_max(p, ST_X(p)) as ost,
                                 arg_min(p, ST_X(p)) as west,
@@ -246,12 +250,10 @@ def get_corner_points(geometry, con):
                     FROM corners
                     """
     try:
-        cursor.execute(corners_sql)
-        corner_points = cursor.fetchone()
+        res = cursor.execute(corners_sql, [geometry]).fetchone()
     finally:
         cursor.close()
-
-    return corner_points
+    return res if res else (None, None, None, None)
 
 def query_swisstopo(point, layer = "ch.bafu.gefahren-gefaehrdungszonen"):
     """
@@ -269,8 +271,8 @@ def query_swisstopo(point, layer = "ch.bafu.gefahren-gefaehrdungszonen"):
         "SERVICE": "WMS", "VERSION": "1.3.0", "REQUEST": "GetFeatureInfo",
         "LAYERS": layer, "QUERY_LAYERS": layer,
         "CRS": "EPSG:2056",
-        "BBOX": f"{e-50},{n-50},{e+50},{n+50}",
-        "WIDTH": 101, "HEIGHT": 101, "I": 50, "J": 50,
+        "BBOX": f"{e-1},{n-1},{e+1},{n+1}",
+        "WIDTH": 3, "HEIGHT": 3, "I": 1, "J": 1,
         "INFO_FORMAT": "application/json; subtype=geojson",
     }, timeout=30)
     try:
@@ -296,13 +298,12 @@ async def __get_aed_locations_for_egrid(
                     aed.adresse as Adresse, aed.ortschaft as Ortschaft, aed.telefon as Telefon, aed.titel as Titel, aed.beschreib as Beschreibung, aed.zugzeit as Erreichbarkeit, aed.zugang as Zugang, round(ST_Distance(lif.geometry, aed.geometry)) as Entfernung
                         from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                         join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/AEDSTO/aedsto_aedsto.parquet' aed on ST_Intersects(lif.geometry, ST_Buffer(aed.geometry, 2000))
-                        where lif.egrid = '{egrid}'
+                        where lif.egrid = ?
                         order by Entfernung asc
                     """
-    # reicht Luftlinie als Entfernungsangabe? gibt auch Geoprodukte zur Erreichbarkeit (AEDFALLE, AEDFOPEN), ist aber nicht so genau für Standorte innerhalb von Gebäuden?
-    # besser nur den allernächsten Standort angeben? oder nur solche, die jederzeit verfügbar sind (aed.zugang = '24h')?
+    
     try:
-        cursor.execute(spatial_sql)
+        cursor.execute(spatial_sql, [egrid])
         results = cursor.fetchall()
         if not results:
             return([{}], "")
@@ -310,5 +311,5 @@ async def __get_aed_locations_for_egrid(
         dicts = [dict(zip(columns, row)) for row in results]
     finally:
         cursor.close()
-    map_link = get_map_link("get_aed_standorte_for_egrid", {"egrid": egrid})
+    map_link = get_map_link("get_aed_locations_for_egrid", {"egrid": egrid})
     return dicts, map_link
