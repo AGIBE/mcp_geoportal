@@ -21,7 +21,8 @@ Im Justfile sind noch eine Reihe weiterer Commands definiert, die das Debuggen e
 Der MCP-Server hat eine Reihe von Tests, die mit pytest ausgeführt werden können. Für jedes MCP-Tool gibt es Tests auf Stufe MCP - d.h. der Test wird via MCP gemacht - und auf Stufe der Funktion ohne MCP-Overhead.
 
 # Integration in Claude Desktop
-Damit Claude Desktop den MCP-Server erkennt, muss dieser ihm per Config-File bekannt gemacht werden. Ein Beispiel ist im Repository abgelegt (claude_desktop_config.json). Die Pfade darin sind bei Bedarf (Pfad zu uv und der Pfad zum Repository) anzupassen. Das File wird im Verzeichnis C:\Users\[USERID]\AppData\Roaming\Claude abgelegt. Wenn alle Pfade stimmen, dann wird Claude den MCP-Server beim Aufstarten erkennen und diesen starten. In Claude Desktop ist der MCP-Server dann unter den Konnektoren zu finden.
+Damit Claude Desktop den MCP-Server erkennt, muss dieser ihm per Config-File bekannt gemacht werden. Ein Beispiel ist im Repository abgelegt (claude_desktop_config.json). Die Pfade darin sind bei Bedarf (Pfad zu uv und der Pfad zum Repository) anzupassen. Das File wird je nach Claude Desktop Version in einem unterschiedlichem Verzeichnis abgelegt. Das korrekte Verzeichnis findet sich in Claude Desktop unter *Settings (Crtl + , )*, wenn ihr im Tab *Developer* auf *Edit config* klickt. In dem Verzeichnis existiert bereits ein File mit dem Namen `claude_desktop_config.json`. In diesm muss der Inhalt mit dem angepassten Beispiel aus dem Repository ersetzt werden.   
+Wenn alle Pfade stimmen, dann wird Claude den MCP-Server beim Aufstarten erkennen und diesen starten. In Claude Desktop ist der MCP-Server dann unter den Konnektoren zu finden.
 
 # Alternativen zu Claude Desktop
 Claude Desktop erlaubt im freien Abo nur wenige Prompts, so dass man schnell ausgeschossen ist. Daher ist es theoretisch eine Option, ein lokal installiertes LLM zu verwenden. Das sollte grob gesagt mit folgenden Schritten klappen:
