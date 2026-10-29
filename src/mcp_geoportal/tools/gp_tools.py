@@ -222,7 +222,7 @@ async def __get_earthquake_risk_for_egrid(
     map_link = get_map_link("get_subsoil_class_for_egrid", {"egrid": egrid})
     return result, map_link
 
-def get_corner_points(geometry, con):
+def get_corner_points(geometry: str, con: duckdb.DuckDBPyConnection):
     """
     Gibt den nördlichsten, östlichsten, südlichsten, westlichsten Punkt einer Geometrie jeweils als Tuple (x-Koordinate, y-Koordinate)
      zurück.
@@ -255,7 +255,7 @@ def get_corner_points(geometry, con):
         cursor.close()
     return res if res else (None, None, None, None)
 
-def query_swisstopo(point, layer = "ch.bafu.gefahren-gefaehrdungszonen"):
+def query_swisstopo(point: tuple, layer: str = "ch.bafu.gefahren-gefaehrdungszonen"):
     """
     Führt einen GetFeatureInfo Request auf den gewünschten Layer des WMS von swisstopo aus.
     
