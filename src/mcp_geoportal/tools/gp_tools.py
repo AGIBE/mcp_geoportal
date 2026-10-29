@@ -1,7 +1,7 @@
 import json
 
 import duckdb
-import rasterio # rasterio und requests musste ich noch ins venv installieren
+import rasterio
 from rasterio.mask import mask
 import requests
 
