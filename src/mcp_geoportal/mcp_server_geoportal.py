@@ -243,8 +243,9 @@ async def get_erdbebenrisiko_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
+    http_client = ctx.request_context.lifespan_context.http_client
     return await mcp_geoportal.tools.__get_earthquake_risk_for_egrid(
-        egrid, EXTERNAL_APIS, db
+        egrid, EXTERNAL_APIS, db, http_client
     )
 
 

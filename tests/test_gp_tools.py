@@ -126,10 +126,10 @@ async def test_get_aed_locations_egrid_invalid(
 
 @pytest.mark.anyio
 async def test_get_earthquake_risk_egrid_valid(
-    egrid_valid, api_definitions, duckdb_connection
+    egrid_valid, api_definitions, duckdb_connection, http_client
 ):
     result_dict, map_link = await __get_earthquake_risk_for_egrid(
-            egrid_valid, api_definitions, duckdb_connection
+            egrid_valid, api_definitions, duckdb_connection, http_client
         )
     
     assert map_link.startswith("https://www.topo.apps.be.ch")
@@ -137,10 +137,10 @@ async def test_get_earthquake_risk_egrid_valid(
 
 @pytest.mark.anyio
 async def test_get_earthquake_risk_egrid_invalid(
-    egrid_invalid, api_definitions, duckdb_connection
+    egrid_invalid, api_definitions, duckdb_connection, http_client
 ):
     result_dict, map_link = await __get_earthquake_risk_for_egrid(
-        egrid_invalid, api_definitions, duckdb_connection
+        egrid_invalid, api_definitions, duckdb_connection, http_client
     )
 
     assert map_link == ""
