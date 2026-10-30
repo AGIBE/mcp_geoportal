@@ -296,6 +296,32 @@ async def get_aed_locations_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
+
+@mcp.tool(
+    name="Hole_genehmigte_Gewaesserraeume_zu_EGRID",
+    description="""Ermittelt die genehmigten Gewaesserraeume, welche auf einem Grundstück liegen.
+        Args:
+            egrid (str): E-GRID, für den die genehmigten Gewässerräume ermittelt werden sollen.
+        Returns:
+            list[dict]: Eine Liste mit einem Dictionnary zu jedem der genehmigten Gewässerräume, welche auf dem Grundstück liegen.
+                Jeder Dictionnary hat 4 Keys:
+                    - Gewässerraumkategorie_de: Gewässerraumkategorie nach DM22 in deutscher Sprache
+                    - Gewässerraumkategorie_fr: Gewässerraumkategorie nach DM22 in französischer Sprache
+                    - Gewässerraumtyp_de: Typ des Gewässerraums in deutscher Sprache
+                    - Gewässerraumtyp_fr: Typ des Gewässerraums in französischer Sprache
+                    - Fläche: Fläche der Parzelle, welche sich mit dem Gewässerraum überschneidet, in m2
+                Falls in der betreffenden Gemeinde noch keine genehmigten Gewässerräume vorliegen, liefert die Abfrage in der Liste
+                nur einen Dictionnary der Form {"Status": "nicht genehmigt"} zurück.
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_river_zones_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[list[dict], str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_river_zones_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
 # =================================================================================================
 # CUSTOM-ROUTES
 # =================================================================================================
