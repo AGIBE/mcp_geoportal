@@ -47,6 +47,19 @@ def get_map_link(name_function: str, params: dict) -> str:
         centerx, centery = get_center_from_bbox(params)
         scale = get_scale_from_bbox(params)
         url = f"&addcrosshair=true&scale={scale}&lang={lang}&center={centerx},{centery}&theme=HK_BUNT&gpk=NOMKL_GPK"
+        
+    if name_function == "get_subsoil_class_for_egrid":
+        egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
+        scale = params.get("scale", 1000)
+        lang = params.get("lang", "de")
+        url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=FRK_SEDIRAS_KMGDM2&legend=True"
+
+    if name_function == "get_aed_locations_for_egrid":
+        egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
+        scale = params.get("scale", 1000)
+        lang = params.get("lang", "de")
+        url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=AEDSTO_AEDSTO_KMGDM1,AEDSTO_AEDSTO_KMGDM2&legend=True"
+
     full_url = base_url + url
     return full_url
 

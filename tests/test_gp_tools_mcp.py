@@ -126,3 +126,63 @@ async def test_get_property_info_egrid_mcp_invalid(mcp_session, egrid_invalid):
 
     assert result_dict == {}
     assert map_link == ""
+
+
+@pytest.mark.anyio
+async def test_get_aed_locations_egrid_mcp_valid(mcp_session, egrid_valid):
+    result = await mcp_session.call_tool(
+        "Hole_naechste_AED_Standorte_zu_EGRID", {"egrid": egrid_valid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_dict = result_content[0]
+    map_link = result_content[1]
+
+    assert "Adresse" in result_dict[0].keys() # Funktion gibt Liste von Standorten zurück
+    assert map_link.startswith("https://www.topo.apps.be.ch")
+
+
+@pytest.mark.anyio
+async def test_get_aed_locations_egrid_mcp_invalid(mcp_session, egrid_invalid):
+    result = await mcp_session.call_tool(
+        "Hole_naechste_AED_Standorte_zu_EGRID", {"egrid": egrid_invalid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_dict = result_content[0]
+    map_link = result_content[1]
+
+    assert result_dict == [{}]
+    assert map_link == ""
+
+
+@pytest.mark.anyio
+async def test_get_earthquake_risk_egrid_mcp_valid(mcp_session, egrid_valid):
+    result = await mcp_session.call_tool(
+        "Hole_Erdbebenrisiko_zu_EGRID", {"egrid": egrid_valid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_dict = result_content[0]
+    map_link = result_content[1]
+
+    assert "Gefährdungszone" in result_dict.keys()
+    assert map_link.startswith("https://www.topo.apps.be.ch")
+
+
+@pytest.mark.anyio
+async def test_get_earthquake_risk_egrid_mcp_invalid(mcp_session, egrid_invalid):
+    result = await mcp_session.call_tool(
+        "Hole_Erdbebenrisiko_zu_EGRID", {"egrid": egrid_invalid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_dict = result_content[0]
+    map_link = result_content[1]
+
+    assert result_dict == {}
+    assert map_link == ""

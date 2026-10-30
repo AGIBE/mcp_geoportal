@@ -11,5 +11,7 @@ from .gp_tools import (
     __get_naturgefahren_for_egrid,
     __get_property_info_for_egrid,
     __get_coordinates_from_nomkl,
+    __get_earthquake_risk_for_egrid,
+    __get_aed_locations_for_egrid,
 )
 from .oereb_tools import __get_oereb_auszug, __get_oereb_themes
