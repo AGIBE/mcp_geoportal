@@ -348,7 +348,7 @@ def __search_exact_matches(
         sql = f"""
             SELECT gemname AS Gemeindename, {data_name} AS Datentyp, bbox.min_x, bbox.max_x, bbox.min_y, bbox.max_y
             FROM '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet'
-            WHERE {data_name} = ?
+            WHERE {data_name} ILIKE ?
         """
         try:
             cursor.execute(sql, [search_string])
