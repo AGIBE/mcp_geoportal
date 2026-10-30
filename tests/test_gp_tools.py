@@ -6,7 +6,8 @@ from mcp_geoportal.tools import (
     __get_property_info_for_egrid,
     __get_coordinates_from_nomkl,
     __get_aed_locations_for_egrid,
-    __get_earthquake_risk_for_egrid
+    __get_earthquake_risk_for_egrid,
+    __get_river_zones_for_egrid
 )
 
 
@@ -167,3 +168,26 @@ async def test_get_earthquake_risk_egrid_invalid(
 
     assert map_link == ""
     assert result_dict == {}
+
+
+@pytest.mark.anyio
+async def test_get_river_zones_egrid_valid(
+    egrid_valid, api_definitions, duckdb_connection
+):
+    result_list, map_link = await __get_river_zones_for_egrid(
+        egrid_valid, api_definitions, duckdb_connection
+    )
+
+    assert map_link.startswith("https://www.topo.apps.be.ch")
+    assert len(result_list[0]) > 0
+
+@pytest.mark.anyio
+async def test_get_river_zones_egrid_invalid(
+    egrid_invalid, api_definitions, duckdb_connection
+):
+    result_list, map_link = await __get_river_zones_for_egrid(
+        egrid_invalid, api_definitions, duckdb_connection
+    )
+
+    assert map_link == ""
+    assert result_list == [{}]

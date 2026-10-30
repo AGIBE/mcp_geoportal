@@ -186,3 +186,33 @@ async def test_get_earthquake_risk_egrid_mcp_invalid(mcp_session, egrid_invalid)
 
     assert result_dict == {}
     assert map_link == ""
+
+
+@pytest.mark.anyio
+async def test_get_river_zones_egrid_mcp_valid(mcp_session, egrid_valid):
+    result = await mcp_session.call_tool(
+        "Hole_genehmigte_Gewässerräume_zu_EGRID", {"egrid": egrid_valid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_list = result_content[0]
+    map_link = result_content[1]
+
+    assert len(result_list[0]) > 0
+    assert map_link.startswith("https://www.topo.apps.be.ch")
+
+
+@pytest.mark.anyio
+async def test_get_river_zones_egrid_mcp_invalid(mcp_session, egrid_invalid):
+    result = await mcp_session.call_tool(
+        "Hole_genehmigte_Gewässerräume_zu_EGRID", {"egrid": egrid_invalid}
+    )
+
+    result_content = result.structured_content["result"]
+
+    result_list = result_content[0]
+    map_link = result_content[1]
+
+    assert result_list == [{}]
+    assert map_link == ""
