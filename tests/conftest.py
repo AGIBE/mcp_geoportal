@@ -89,19 +89,19 @@ def api_definitions():
 
 
 @pytest.fixture
-def unique_gemeinde() -> tuple:
+def unique_municipality() -> tuple:
     """Gemeindename, der ein eindeutiges Ergebnis zurückgibt."""
     return ("Nidau", 743)
 
 
 @pytest.fixture
-def not_existing_gemeinde() -> str:
+def not_existing_municipality() -> str:
     """Gemeindename, der kein Ergebnis zurückgibt."""
     return "asdfasdfsfadfa"
 
 
 @pytest.fixture
-def multiple_gemeinde() -> str:
+def multiple_municipality() -> str:
     """Gemeindename, der mehrere Ergebnisse zurückgibt."""
     return "igen"
 

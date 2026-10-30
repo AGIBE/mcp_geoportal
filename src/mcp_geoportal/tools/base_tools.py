@@ -10,7 +10,7 @@ logger = logging.getLogger("MCP_Geoportal_Logger")
 # TODO: von einer Parzellennummer zu EGRID
 
 
-async def __get_bfsnr_for_gemeinde(
+async def __get_bfsnr_for_municipality(
     searchtext: str, api_definitions: dict, client: httpx2.AsyncClient
 ) -> int | dict:
     """

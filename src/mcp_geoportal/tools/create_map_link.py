@@ -24,13 +24,13 @@ def get_map_link(name_function: str, params: dict) -> str:
     """
     base_url = "https://www.topo.apps.be.ch/pub/map/?"
 
-    if name_function == "get_naturgefahren_for_egrid":
+    if name_function == "get_natural_hazards_for_egrid":
         egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
         scale = params.get("scale", 1000)
         lang = params.get("lang", "de")
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}&layers=NATGEFKA_GEFGEB_KMGDM3&legend=True"
 
-    if name_function == "get_bohrprofile_for_egrid":
+    if name_function == "get_borehole_profiles_for_egrid":
         egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
         scale = params.get("scale", 1000)
         lang = params.get("lang", "de")
@@ -47,7 +47,7 @@ def get_map_link(name_function: str, params: dict) -> str:
         centerx, centery = get_center_from_bbox(params)
         scale = get_scale_from_bbox(params)
         url = f"&addcrosshair=true&scale={scale}&lang={lang}&center={centerx},{centery}&theme=HK_BUNT&gpk=NOMKL_GPK"
-        
+
     if name_function == "get_subsoil_class_for_egrid":
         egrid = params.get("egrid", "CH294676423526")  # Default EGRID auf Bundeshaus
         scale = params.get("scale", 1000)

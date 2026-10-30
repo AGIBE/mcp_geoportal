@@ -1,8 +1,8 @@
 import pytest
 from mcp_geoportal.tools import (
-    __get_bohrprofile_for_egrid,
-    __get_gemeinde_infos,
-    __get_naturgefahren_for_egrid,
+    __get_borehole_profiles_for_egrid,
+    __get_municipality_infos,
+    __get_natural_hazards_for_egrid,
     __get_property_info_for_egrid,
     __get_coordinates_from_nomkl,
     __get_aed_locations_for_egrid,
@@ -11,19 +11,19 @@ from mcp_geoportal.tools import (
 
 
 @pytest.mark.anyio
-async def test_get_gemeinde_infos_valid_bfsnr(
+async def test_get_municipality_infos_valid_bfsnr(
     bfnsr_valid, api_definitions, duckdb_connection
 ):
-    result = await __get_gemeinde_infos(bfnsr_valid, api_definitions, duckdb_connection)
+    result = await __get_municipality_infos(bfnsr_valid, api_definitions, duckdb_connection)
 
     assert "Einwohnerzahl" in result.keys()
 
 
 @pytest.mark.anyio
-async def test_get_gemeinde_infos_invalid_bfsnr(
+async def test_get_municipality_infos_invalid_bfsnr(
     bfnsr_invalid, api_definitions, duckdb_connection
 ):
-    result = await __get_gemeinde_infos(
+    result = await __get_municipality_infos(
         bfnsr_invalid, api_definitions, duckdb_connection
     )
 
@@ -52,10 +52,10 @@ async def test_get_coordinates_from_nomkl_invalid(
     assert "feedback" in result_list[0].keys()
 
 @pytest.mark.anyio
-async def test_get_bohrprofile_egrid_valid(
+async def test_get_borehole_profiles_egrid_valid(
     egrid_valid, api_definitions, duckdb_connection
 ):
-    result_list, map_link = await __get_bohrprofile_for_egrid(
+    result_list, map_link = await __get_borehole_profiles_for_egrid(
         egrid_valid, api_definitions, duckdb_connection
     )
 
@@ -65,10 +65,10 @@ async def test_get_bohrprofile_egrid_valid(
 
 
 @pytest.mark.anyio
-async def test_get_bohrprofile_egrid_invalid(
+async def test_get_borehole_profiles_egrid_invalid(
     egrid_invalid, api_definitions, duckdb_connection
 ):
-    result_list, map_link = await __get_bohrprofile_for_egrid(
+    result_list, map_link = await __get_borehole_profiles_for_egrid(
         egrid_invalid, api_definitions, duckdb_connection
     )
 
@@ -77,10 +77,10 @@ async def test_get_bohrprofile_egrid_invalid(
 
 
 @pytest.mark.anyio
-async def test_get_naturgefahren_egrid_valid(
+async def test_get_natural_hazards_egrid_valid(
     egrid_valid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_naturgefahren_for_egrid(
+    result_dict, map_link = await __get_natural_hazards_for_egrid(
         egrid_valid, api_definitions, duckdb_connection
     )
 
@@ -89,10 +89,10 @@ async def test_get_naturgefahren_egrid_valid(
 
 
 @pytest.mark.anyio
-async def test_get_naturgefahren_egrid_invalid(
+async def test_get_natural_hazards_egrid_invalid(
     egrid_invalid, api_definitions, duckdb_connection
 ):
-    result_dict, map_link = await __get_naturgefahren_for_egrid(
+    result_dict, map_link = await __get_natural_hazards_for_egrid(
         egrid_invalid, api_definitions, duckdb_connection
     )
 

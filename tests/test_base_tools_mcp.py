@@ -2,27 +2,27 @@ import pytest
 
 
 @pytest.mark.anyio
-async def test_bfsnr_for_gemeinde_mcp_valid_gemeinde(unique_gemeinde, mcp_session):
+async def test_bfsnr_for_municipality_mcp_valid_municipality(unique_municipality, mcp_session):
     result = await mcp_session.call_tool(
-        "Suche_BFSNR_zu_Gemeinde", {"searchtext": unique_gemeinde[0]}
+        "Suche_BFSNR_zu_Gemeinde", {"searchtext": unique_municipality[0]}
     )
-    assert result.structured_content["result"] == unique_gemeinde[1]
+    assert result.structured_content["result"] == unique_municipality[1]
 
 
 @pytest.mark.anyio
-async def test_bfsnr_for_gemeinde_mcp_inexisting_gemeinde(
-    not_existing_gemeinde, mcp_session
+async def test_bfsnr_for_municipality_mcp_inexisting_municipality(
+    not_existing_municipality, mcp_session
 ):
     result = await mcp_session.call_tool(
-        "Suche_BFSNR_zu_Gemeinde", {"searchtext": not_existing_gemeinde}
+        "Suche_BFSNR_zu_Gemeinde", {"searchtext": not_existing_municipality}
     )
     assert "hinweis" in result.structured_content["result"]
 
 
 @pytest.mark.anyio
-async def test_bfsnr_for_gemeinde_mcp_multiple_gemeinde(multiple_gemeinde, mcp_session):
+async def test_bfsnr_for_municipality_mcp_multiple_municipality(multiple_municipality, mcp_session):
     result = await mcp_session.call_tool(
-        "Suche_BFSNR_zu_Gemeinde", {"searchtext": multiple_gemeinde}
+        "Suche_BFSNR_zu_Gemeinde", {"searchtext": multiple_municipality}
     )
     assert "hinweis" in result.structured_content["result"]
     assert "optionen" in result.structured_content["result"]

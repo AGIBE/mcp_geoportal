@@ -37,7 +37,7 @@ async def __get_oereb_themes(
     return result_dict
 
 
-async def __get_oereb_auszug(
+async def __get_oereb_extract(
     egrid: str, api_definitions: dict, client: httpx2.AsyncClient
 ) -> str:
     """Erstelle für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und lies alle vorhandenen Eigentumsbeschränkungen aus.

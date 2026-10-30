@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.anyio
-async def test_get_gemeinde_infos_mcp_valid_bfsnr(mcp_session, bfnsr_valid):
+async def test_get_municipality_infos_mcp_valid_bfsnr(mcp_session, bfnsr_valid):
     result = await mcp_session.call_tool(
         "Hole_Gemeindeinfos_zu_BFSNummer", {"bfs_nr": bfnsr_valid}
     )
@@ -12,7 +12,7 @@ async def test_get_gemeinde_infos_mcp_valid_bfsnr(mcp_session, bfnsr_valid):
 
 
 @pytest.mark.anyio
-async def test_get_gemeinde_infos_mcp_invalid_bfsnr(mcp_session, bfnsr_invalid):
+async def test_get_municipality_infos_mcp_invalid_bfsnr(mcp_session, bfnsr_invalid):
     result = await mcp_session.call_tool(
         "Hole_Gemeindeinfos_zu_BFSNummer", {"bfs_nr": bfnsr_invalid}
     )
@@ -40,7 +40,7 @@ async def test_get_coordinates_from_nomkl_mcp_invalid(mcp_session, nomkl_string_
 
 
 @pytest.mark.anyio
-async def test_get_bohrprofile_egrid_mcp_valid(mcp_session, egrid_valid):
+async def test_get_borehole_profiles_egrid_mcp_valid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool(
         "Hole_Bohrprofile_zu_EGRID", {"egrid": egrid_valid}
     )
@@ -55,7 +55,7 @@ async def test_get_bohrprofile_egrid_mcp_valid(mcp_session, egrid_valid):
 
 
 @pytest.mark.anyio
-async def test_get_bohrprofile_egrid_mcp_invalid(mcp_session, egrid_invalid):
+async def test_get_borehole_profiles_egrid_mcp_invalid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool(
         "Hole_Bohrprofile_zu_EGRID", {"egrid": egrid_invalid}
     )
@@ -69,7 +69,7 @@ async def test_get_bohrprofile_egrid_mcp_invalid(mcp_session, egrid_invalid):
 
 
 @pytest.mark.anyio
-async def test_get_naturgefahren_egrid_mcp_valid(mcp_session, egrid_valid):
+async def test_get_natural_hazards_egrid_mcp_valid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool(
         "Hole_Naturgefahreninfo_zu_EGRID", {"egrid": egrid_valid}
     )
@@ -84,7 +84,7 @@ async def test_get_naturgefahren_egrid_mcp_valid(mcp_session, egrid_valid):
 
 
 @pytest.mark.anyio
-async def test_get_naturgefahren_egrid_mcp_invalid(mcp_session, egrid_invalid):
+async def test_get_natural_hazards_egrid_mcp_invalid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool(
         "Hole_Naturgefahreninfo_zu_EGRID", {"egrid": egrid_invalid}
     )

@@ -18,7 +18,7 @@ from .create_map_link import get_map_link
 # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
 
 
-async def __get_gemeinde_infos(
+async def __get_municipality_infos(
     bfs_nr: int, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
@@ -30,10 +30,10 @@ async def __get_gemeinde_infos(
                     gde.espop::VARCHAR AS Einwohnerzahl, gde.espop_gmfl::VARCHAR AS "Bevölkerungsdichte pro ha", gde.gmdflaeche::VARCHAR AS "Gemeindefläche in ha", ste.steuanlg::VARCHAR as Steueranlage, gde.url::VARCHAR AS Website
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/ADMGDE/admgde_gdedat.parquet' gde
                     join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/STEUERN/steuern_steuanl.parquet' ste on gde.bfsnr = ste.bfsnr
-                    where gde.bfsnr = {bfs_nr}
+                    where gde.bfsnr = ?
                 """
     try:
-        cursor.execute(spatial_sql)
+        cursor.execute(spatial_sql, [bfs_nr])
         row = cursor.fetchone()
         if row is None:
             return {}
@@ -43,7 +43,7 @@ async def __get_gemeinde_infos(
     return dict(zip(columns, row))
 
 
-async def __get_bohrprofile_for_egrid(
+async def __get_borehole_profiles_for_egrid(
     egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
@@ -56,10 +56,10 @@ async def __get_bohrprofile_for_egrid(
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                     join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/GEOSOND/geosond_geosond.parquet' gef on ST_Intersects(lif.geometry, ST_Buffer(gef.geometry, 300))
                     where
-                    lif.egrid = '{egrid}'
+                    lif.egrid = ?
                 """
     try:
-        cursor.execute(spatial_sql)
+        cursor.execute(spatial_sql, [egrid])
         results = cursor.fetchall()
         if not results:
             return ([{}], "")
@@ -67,11 +67,11 @@ async def __get_bohrprofile_for_egrid(
     finally:
         cursor.close()
     dicts = [dict(zip(columns, row)) for row in results]
-    map_link = get_map_link("get_bohrprofile_for_egrid", {"egrid": egrid})
+    map_link = get_map_link("get_borehole_profiles_for_egrid", {"egrid": egrid})
     return dicts, map_link
 
 
-async def __get_naturgefahren_for_egrid(
+async def __get_natural_hazards_for_egrid(
     egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
 ) -> dict:
     """
@@ -84,10 +84,10 @@ async def __get_naturgefahren_for_egrid(
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
                     join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NATGEFKA/natgefka_gefgeb.parquet' gef on ST_Intersects(lif.geometry, gef.geometry)
                     where
-                    lif.egrid = '{egrid}'
+                    lif.egrid = ?
                 """
     try:
-        cursor.execute(spatial_sql)
+        cursor.execute(spatial_sql, [egrid])
         results = cursor.fetchall()
         if not results:
             return ({}, "")
@@ -104,13 +104,13 @@ async def __get_naturgefahren_for_egrid(
             result_dict[item.get("gefahr")] = item.get("stufe")
 
     mapped_result_dict = {
-        k: get_gefahrenstufe_mapped(v) for k, v in result_dict.items()
+        k: get_danger_level_mapped(v) for k, v in result_dict.items()
     }
-    map_link = get_map_link("get_naturgefahren_for_egrid", {"egrid": egrid})
+    map_link = get_map_link("get_natural_hazards_for_egrid", {"egrid": egrid})
     return mapped_result_dict, map_link
 
 
-def get_gefahrenstufe_mapped(value: int) -> str:
+def get_danger_level_mapped(value: int) -> str:
     """Mappt die Gefahrenstufe auf eine lesbare Bezeichnung.
 
     Args:
@@ -140,10 +140,10 @@ async def __get_property_info_for_egrid(
                     select
                     dp.gstnr as Grundstücksnummer, dp.gstbez as Grundstückbezeichnung, dp.gbflae as Grundstücksfläche, dp.gstartt_gstart_de as Grundstückart_deutsch, dp.gstartt_gstart_fr as Grundstückart_französisch
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/DIPANU/dipanu_dipanuf.parquet' dp
-                    where egrid = '{egrid}'
+                    where egrid = ?
                 """
     try:
-        cursor.execute(spatial_sql)
+        cursor.execute(spatial_sql, [egrid])
         row = cursor.fetchone()
         columns = [desc[0] for desc in cursor.description]
         if not row:
@@ -206,13 +206,13 @@ async def __get_earthquake_risk_for_egrid(
 
         # Klassierung vornehmen
         if max_sediment_depth <= 5:
-            baugrundklasse = "Klasse A"
+            subsoil_class= "Klasse A"
         elif max_sediment_depth <= 20:
-            baugrundklasse = "Klasse E"
+            subsoil_class = "Klasse E"
         else:
-            baugrundklasse = "Klasse B+C+D"
+            subsoil_class = "Klasse B+C+D"
             
-        result["Baugrundklasse"] = baugrundklasse
+        result["Baugrundklasse"] = subsoil_class
 
     except Exception as e:
         return ({}, "")
@@ -333,10 +333,10 @@ async def __get_coordinates_from_nomkl(
                     select
                     {data_name}.gemname AS Gemeindename, {data_name}.{data_name} as Datentyp, {data_name}.bbox.min_x, {data_name}.bbox.max_x, {data_name}.bbox.min_y, {data_name}.bbox.max_y
                     from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet' {data_name}
-                    where {data_name}.{data_name} = '{search_string}'
+                    where {data_name}.{data_name} = ?
                 """
         try:
-            cursor.execute(spatial_sql)
+            cursor.execute(spatial_sql, [search_string])
             results = cursor.fetchall()
             if results:
                 columns = [desc[0] for desc in cursor.description]

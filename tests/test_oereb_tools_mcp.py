@@ -14,14 +14,14 @@ async def test_get_oereb_themes_mcp(mcp_session):
 
 
 @pytest.mark.anyio
-async def test_get_oereb_auszug_mcp_valid_egrid(mcp_session, egrid_valid):
+async def test_get_oereb_extract_mcp_valid_egrid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool("Hole_OEREB_Auszug", {"egrid": egrid_valid})
 
     assert is_well_formed_xml(result.structured_content["result"])
 
 
 @pytest.mark.anyio
-async def test_get_oereb_auszug_mcp_invalid_egrid(mcp_session, egrid_invalid):
+async def test_get_oereb_extract_mcp_invalid_egrid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool("Hole_OEREB_Auszug", {"egrid": egrid_invalid})
 
     assert "hinweis" in result.structured_content["result"]

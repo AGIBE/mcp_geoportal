@@ -103,9 +103,9 @@ async def get_oereb_themes(ctx: Context[AppContext]) -> dict[str, str]:
     description="""Erstellt für eine Parzelle/Grundstück einen Auszug aus dem ÖREB-Kataster und liest alle vorhandenen Eigentumsbeschränkungen aus.
         Als Input wird der E-GRID benötigt.""",
 )
-async def get_oereb_auszug(egrid: str, ctx: Context[AppContext]) -> str | dict:
+async def get_oereb_extract(egrid: str, ctx: Context[AppContext]) -> str | dict:
     http_client = ctx.request_context.lifespan_context.http_client
-    return await mcp_geoportal.tools.__get_oereb_auszug(
+    return await mcp_geoportal.tools.__get_oereb_extract(
         egrid, EXTERNAL_APIS, http_client
     )
 
@@ -131,11 +131,11 @@ async def get_geoproducts(ctx: Context[AppContext]) -> list[dict]:
     name="Suche_BFSNR_zu_Gemeinde",
     description="Liefert die BFS-Nummer aus dem Amtlichen Gemeindeverzeichnis für die übergebene Gemeinde.",
 )
-async def get_bfsnr_for_gemeinde(
+async def get_bfsnr_for_municipality(
     searchtext: str, ctx: Context[AppContext]
 ) -> int | dict:
     http_client = ctx.request_context.lifespan_context.http_client
-    return await mcp_geoportal.tools.__get_bfsnr_for_gemeinde(
+    return await mcp_geoportal.tools.__get_bfsnr_for_municipality(
         searchtext, EXTERNAL_APIS, http_client
     )
 
@@ -163,9 +163,9 @@ async def get_egrid_from_address(
         Returns:
             list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
 )
-async def get_gemeinde_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str, str]:
+async def get_municipality_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str, str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_gemeinde_infos(bfs_nr, EXTERNAL_APIS, db)
+    return await mcp_geoportal.tools.__get_municipality_infos(bfs_nr, EXTERNAL_APIS, db)
 
 
 @mcp.tool(
@@ -182,11 +182,11 @@ async def get_gemeinde_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str,
                     - pdf_link: Link auf das Bohrprofil-PDF
         str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_bohrprofile_for_egrid(
+async def get_borehole_profiles_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[list[dict], str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_bohrprofile_for_egrid(
+    return await mcp_geoportal.tools.__get_borehole_profiles_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
@@ -200,11 +200,11 @@ async def get_bohrprofile_for_egrid(
             dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_naturgefahren_for_egrid(
+async def get_natural_hazards_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
-    return await mcp_geoportal.tools.__get_naturgefahren_for_egrid(
+    return await mcp_geoportal.tools.__get_natural_hazards_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
@@ -260,7 +260,7 @@ async def get_coordinates_from_nomkl(
             str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern. """
 
 )
-async def get_erdbebenrisiko_for_egrid(
+async def get_earhtquake_risk_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[dict, str]:
     db = ctx.request_context.lifespan_context.db
@@ -288,7 +288,7 @@ async def get_erdbebenrisiko_for_egrid(
                     - Entfernung: Distanz Luftlinie zwischen der E-GRID und dem AED-Standort in Metern
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
-async def get_aed_standorte_for_egrid(
+async def get_aed_locations_for_egrid(
     egrid: str, ctx: Context[AppContext]
 ) -> tuple[list[dict], str]:
     db = ctx.request_context.lifespan_context.db
