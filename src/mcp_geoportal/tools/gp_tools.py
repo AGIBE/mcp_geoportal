@@ -3,7 +3,8 @@ import json
 import duckdb
 import rasterio
 from rasterio.mask import mask
-import requests
+import httpx2
+import asyncio
 
 from .create_map_link import get_map_link
 
@@ -153,12 +154,14 @@ async def __get_property_info_for_egrid(
     map_link = get_map_link("get_property_info_for_egrid", {"egrid": egrid})
     return dict(zip(columns, row)), map_link
 
+
 async def __get_earthquake_risk_for_egrid(
-        egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
+        egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection, client: httpx2.AsyncClient
 ) -> tuple[dict, str]:
     """
     Ermittelt Erdbebengefährdungszone und Baugrundklasse für ein EGRID.
     """
+    cursor = con.cursor()
     result = {}
     
     # 1. EGRID Geometrie holen (Sicher mittels Prepared Statement Bindings)
@@ -167,9 +170,8 @@ async def __get_earthquake_risk_for_egrid(
         from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif
         where lif.egrid = ?
     """
-
     try:
-        db_res = con.execute(spatial_sql, [egrid]).fetchone()
+        db_res = cursor.execute(spatial_sql, [egrid]).fetchone()
         if not db_res:
             return {}, ""
             
@@ -180,7 +182,7 @@ async def __get_earthquake_risk_for_egrid(
         corner_points = get_corner_points(egrid_mask_str, con)
         
         # None-Werte filtern, um Fehler bei max() zu verhindern
-        zone_list = [query_swisstopo(p) for p in corner_points if p is not None]
+        zone_list = list(await asyncio.gather(*(query_swisstopo(p, client) for p in corner_points if p is not None)))
         zone_list = [z for z in zone_list if z is not None]
 
         if not zone_list:
@@ -213,9 +215,12 @@ async def __get_earthquake_risk_for_egrid(
             subsoil_class = "Klasse B+C+D"
             
         result["Baugrundklasse"] = subsoil_class
-
+    except httpx2.RequestError as e:
+        return {"Hinweis": f"Fehler beim Abrufen des Swisstopo WMS, {e}"}
     except Exception as e:
         return ({}, "")
+    finally:
+        cursor.close()
 
     # 4. Maplink generieren
     map_link = get_map_link("get_subsoil_class_for_egrid", {"egrid": egrid})
@@ -254,27 +259,30 @@ def get_corner_points(geometry: str, con: duckdb.DuckDBPyConnection):
         cursor.close()
     return res if res else (None, None, None, None)
 
-def query_swisstopo(point: tuple, layer: str = "ch.bafu.gefahren-gefaehrdungszonen"):
+async def query_swisstopo(point: tuple, client: httpx2.AsyncClient, layer: str = "ch.bafu.gefahren-gefaehrdungszonen"):
     """
     Führt einen GetFeatureInfo Request auf den gewünschten Layer des WMS von swisstopo aus.
     
     Args:
         - point (tuple): Punkt als Tuple (x-Koordinate, y-Koordinate), der abgefragt werden soll.
+        - client (httpx2.AsyncClient): HTTP-Client für die Abfrage mit httpx2.
         - layer (str): Bezeichnung des Layers, der abgefragt wird.
     Returns:
         - value (str): Resultat der Abfrage, None falls kein Resultat zurückkam.
     """
     
     e, n = point
-    r = requests.get("https://wms.geo.admin.ch/", params={
+    search_url = "https://wms.geo.admin.ch/"
+    params = {
         "SERVICE": "WMS", "VERSION": "1.3.0", "REQUEST": "GetFeatureInfo",
         "LAYERS": layer, "QUERY_LAYERS": layer,
         "CRS": "EPSG:2056",
         "BBOX": f"{e-1},{n-1},{e+1},{n+1}",
         "WIDTH": 3, "HEIGHT": 3, "I": 1, "J": 1,
         "INFO_FORMAT": "application/json; subtype=geojson",
-    }, timeout=30)
+    }
     try:
+        r = await client.get(search_url, params=params, timeout=30)
         r.raise_for_status()
         data = r.json()
         features = data.get("features", [])

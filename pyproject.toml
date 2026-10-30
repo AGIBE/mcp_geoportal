@@ -12,7 +12,6 @@ dependencies = [
     "duckdb==1.5.6",
     "mcp[cli]==2.3.0",
     "rasterio>=1.5.2",
-    "requests>=2.34.2",
     "uvicorn==0.54.0",
 ]
 # DuckDB verbleibt vorderhand auf 1.5.6. Auf 2.0.0 führt das neue
