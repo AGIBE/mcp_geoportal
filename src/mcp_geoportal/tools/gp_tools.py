@@ -367,3 +367,48 @@ async def __get_coordinates_from_nomkl(
     cursor.close()
     
     return dicts
+
+async def __get_river_zones_for_egrid(
+    egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
+) -> dict:
+    """
+    GEWRGNHM_GEWRPOLY / GEWRGNHM_GEWRSTA
+    """
+    cursor = con.cursor()
+
+    # erst abfragen, ob diese Gemeinde genehmigte Gewässerräume hat
+    status_sql = f"""
+                    select
+                    gnhm.statust_status_de
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/GEWRGNHM/gewrgnhm_gewrsta.parquet' gnhm
+                    join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif on ST_Intersects(lif.geometry, gnhm.geometry)
+                    where lif.egrid = ?
+                    """
+    # falls ja, Gewässerräume suchen
+    spatial_sql = f"""
+                    select
+                    gwr.gewrkatt_gewrkat_de as Gewässerraumkategorie_de, gwr.gewrkatt_gewrkat_fr as Gewässerraumkategorie_fr, gwr.gewrtypt_gewrtyp_de as Gewässerraumtyp_de, gwr.gewrtypt_gewrtyp_fr as Gewässerraumtyp_fr, ST_Area(ST_Intersection(lif.geometry, gwr.geometry)) as Fläche
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/GEWRGNHM/gewrgnhm_gewrpoly.parquet' gwr
+                    join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif on ST_Intersects(lif.geometry, gwr.geometry)
+                    where lif.egrid = ? and Fläche != 0
+                    """
+    try:
+        cursor.execute(status_sql, [egrid])
+        status = cursor.fetchone()[0]
+        results = None
+        if status == "nicht genehmigt":
+            dicts = [{"Status": status}]
+        elif status == "genehmigt":
+            cursor.execute(spatial_sql, [egrid])
+            results = cursor.fetchall()
+            if not results:
+                return [{}], ""
+            columns = [desc[0] for desc in cursor.description]
+            dicts = [dict(zip(columns, row)) for row in results]
+    except:
+        return [{}], ""
+    finally:
+        cursor.close()
+
+    map_link = get_map_link("get_river_zones_for_egrid", {"egrid": egrid})
+    return dicts, map_link

@@ -197,7 +197,7 @@ async def get_borehole_profiles_for_egrid(
         Args:
             egrid (str): E-GRID für den die Naturgefahren ermittelt werden sollen.
         Returns:
-            dict: Dictionnary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
+            dict: Dictionary mit den Naturgefahren für die Adresse im Format: {"gefahr": "gefahrenstufe"}.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
 async def get_natural_hazards_for_egrid(
@@ -213,7 +213,7 @@ async def get_natural_hazards_for_egrid(
     name="Hole_Grundstueck_Info",
     description="""Ermittelt die verfügbaren Grundstücksdaten ohne Eigentumsauskunft.
         Returns:
-            dict: Dictionnary mit den Grundstücks-Informationen für die EGRID.
+            dict: Dictionary mit den Grundstücks-Informationen für die EGRID.
             str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
 )
 async def get_property_info_for_egrid(
@@ -277,8 +277,8 @@ async def get_earhtquake_risk_for_egrid(
         Args:
             egrid (str): E-GRID, für den die nächstgelegenen AED-Standorte ermittelt werden sollen.
         Returns:
-            list[dict]: Eine Liste mit einem Dictionnary zu jedem AED-Standort im Umkreis von 2000 m, sortiert nach aufsteigender Entfernung.
-                Jeder Dictionnary hat 8 Keys:
+            list[dict]: Eine Liste mit einem Dictionary zu jedem AED-Standort im Umkreis von 2000 m, sortiert nach aufsteigender Entfernung.
+                Jeder Dictionary hat 8 Keys:
                     - Adresse: Strasse und Hausnummer des AED-Standorts
                     - Ortschaft: Ortschaft, in der der AED-Standort liegt
                     - Telefon: Telefonnummer des Standorts
@@ -294,6 +294,32 @@ async def get_aed_locations_for_egrid(
 ) -> tuple[list[dict], str]:
     db = ctx.request_context.lifespan_context.db
     return await mcp_geoportal.tools.__get_aed_locations_for_egrid(
+        egrid, EXTERNAL_APIS, db
+    )
+
+
+@mcp.tool(
+    name="Hole_genehmigte_Gewaesserraeume_zu_EGRID",
+    description="""Ermittelt die genehmigten Gewässerräume, von denen ein Grundstück betroffen ist.
+        Args:
+            egrid (str): E-GRID, für den die genehmigten Gewässerräume ermittelt werden sollen.
+        Returns:
+            list[dict]: Eine Liste mit einem Dictionary zu jedem der genehmigten Gewässerräume, von denen ein Grundstück betroffen ist.
+                Jeder Dictionary hat 4 Keys:
+                    - Gewässerraumkategorie_de: Gewässerraumkategorie nach DM22 in deutscher Sprache
+                    - Gewässerraumkategorie_fr: Gewässerraumkategorie nach DM22 in französischer Sprache
+                    - Gewässerraumtyp_de: Typ des Gewässerraums in deutscher Sprache
+                    - Gewässerraumtyp_fr: Typ des Gewässerraums in französischer Sprache
+                    - Fläche: Fläche der Parzelle, welche sich mit dem Gewässerraum überschneidet, in m2
+                Falls in der betreffenden Gemeinde noch keine genehmigten Gewässerräume vorliegen, liefert die Abfrage in der Liste
+                nur einen Dictionary der Form {"Status": "nicht genehmigt"} zurück.
+            str: Link zur Kartenansicht im Geoportal des Kantons Bern.""",
+)
+async def get_river_zones_for_egrid(
+    egrid: str, ctx: Context[AppContext]
+) -> tuple[list[dict], str]:
+    db = ctx.request_context.lifespan_context.db
+    return await mcp_geoportal.tools.__get_river_zones_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
