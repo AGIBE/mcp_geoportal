@@ -322,49 +322,95 @@ async def __get_aed_locations_for_egrid(
 
 async def __get_coordinates_from_nomkl(
     search_string: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
-) -> dict:
+) -> list[dict]:
     """
-    Liefert die Koordinaten und die Gemeindezugehörigkeit für einen Flurnamen, Ortsnamen oder Geländenamen aus dem Nomenklatur Geoprodukt (NOMKL).
-
-    Returns:
-        dict: Ein Dictionary mit den Koordinaten.
+    Hauptmethode: Liefert Koordinaten für einen Suchbegriff. 
+    Falls kein exakter Treffer existiert, werden die 3 besten Alternativen geliefert.
     """
     cursor = con.cursor()
-    dicts = []
-    # Hier könnte ein Filter für einzelne Datenquellen implementiert werden, falls nur bestimmte Layer abgefragt werden sollen.
     source_names = ["Ortsname", "Flurname", "Geländename"]
     layer_names = ["ortsname", "flurname", "gelname"]
-    for index,data_name in enumerate(layer_names):
-        spatial_sql = f"""
-                    select
-                    {data_name}.gemname AS Gemeindename, {data_name}.{data_name} as Datentyp, {data_name}.bbox.min_x, {data_name}.bbox.max_x, {data_name}.bbox.min_y, {data_name}.bbox.max_y
-                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet' {data_name}
-                    where {data_name}.{data_name} = ?
-                """
+    
+    # 1. Exakte Suche über alle Layer
+    dicts = __search_exact_matches(cursor, search_string, layer_names, source_names, api_definitions)
+
+    # 2. Falls nichts gefunden, fuzzy Fallback-Suche triggern
+    if not dicts:
+        dicts = __search_fuzzy_alternatives(cursor, search_string, layer_names, source_names, api_definitions)
+
+    # 3. Resultate anreichern
+    if dicts and "feedback" not in dicts[0]:
+        for d in dicts:
+            d["Kartenlink"] = get_map_link("get_coordinates_from_nomkl", d)
+
+    cursor.close()
+    return dicts
+
+
+def __search_exact_matches(
+    cursor: duckdb.DuckDBPyConnection, search_string: str, layer_names: list[str], source_names: list[str], api_definitions: dict
+) -> list[dict]:
+    """Sucht in allen Layern nach exakten Treffern."""
+    matches = []
+    for index, data_name in enumerate(layer_names):
+        sql = f"""
+            SELECT gemname AS Gemeindename, {data_name} AS Datentyp, bbox.min_x, bbox.max_x, bbox.min_y, bbox.max_y
+            FROM '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet'
+            WHERE {data_name} ILIKE ?
+        """
         try:
-            cursor.execute(spatial_sql, [search_string])
+            cursor.execute(sql, [search_string])
             results = cursor.fetchall()
             if results:
                 columns = [desc[0] for desc in cursor.description]
-                dicts_i = [dict(zip(columns, row)) for row in results]
-                for d in dicts_i:
+                for row in results:
+                    d = dict(zip(columns, row))
                     d["source"] = source_names[index]
-                    dicts.append(d)
-                # Hier könnter noch center-x, center-y und scale aus der bbox eingefügt werden
-        except Exception:
-            print(f"Error executing spatial SQL for {data_name}: {spatial_sql}")
-            continue
+                    matches.append(d)
+        except Exception as e:
+            pass
+            #sys.stderr.write(f"Error executing exact SQL for {data_name}: {e}")
+    return matches
+
+
+def __search_fuzzy_alternatives(
+    cursor: duckdb.DuckDBPyConnection, search_string: str, layer_names: list[str], source_names: list[str], api_definitions: dict
+) -> list[dict]:
+    """Sucht mittels Levenshtein-Distanz nach den global 3 besten Alternativen."""
+    candidates = []
+    for index, data_name in enumerate(layer_names):
+        sql = f"""
+            SELECT gemname AS Gemeindename, {data_name} AS Datentyp, bbox.min_x, bbox.max_x, bbox.min_y, bbox.max_y,
+                   levenshtein({data_name}, ?) AS distance
+            FROM '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/NOMKL/nomkl_{data_name}.parquet'
+            ORDER BY distance ASC
+            LIMIT 3
+        """
+        try:
+            cursor.execute(sql, [search_string])
+            results = cursor.fetchall()
+            if results:
+                columns = [desc[0] for desc in cursor.description]
+                for row in results:
+                    d = dict(zip(columns, row))
+                    d["source"] = source_names[index]
+                    candidates.append(d)
+        except Exception as e:
+            pass
+            #sys.stderr.write(f"Error executing fuzzy SQL for {data_name}: {e}")
+
+    if candidates:
+        # Sortiert alle Kandidaten layerübergreifend nach der kleinsten Distanz
+        candidates.sort(key=lambda x: x["distance"])
+        top_3 = candidates[:3]
         
+        # Hinweis-Text einbauen und temporäre Distanz-Spalte entfernen
+        for d in top_3:
+            d["note"] = f"Bezeichnung konnte nicht gefunden werden. Meinten Sie '{d['Datentyp']}'?"
+            del d["distance"]
+        return top_3
         
-    if  len(dicts) == 0:
-        dicts.append({"feedback": "Hinweis: Die Bezeichnung wurde nicht gefunden"})
-    else:
-        for dict_j in dicts:
-            map_link = get_map_link("get_coordinates_from_nomkl", dict_j)
-            dict_j["Kartenlink"] = map_link
-    cursor.close()
-    
-    return dicts
+    return [{"feedback": "Hinweis: Die Bezeichnung wurde nicht gefunden."}]
 
 async def __get_river_zones_for_egrid(
     egrid: str, api_definitions: dict, con: duckdb.DuckDBPyConnection
