@@ -8,12 +8,10 @@ import asyncio
 
 from .create_map_link import get_map_link
 
-# TODO: AED-Standort: Wo sind die nächste AED-Standort?
 # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
 # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen (SEIN_UNUEBAU)?
 # TODO: Freies Übernachten/Biwakieren (z.B. darf ich am Hinterburgseeli biwakieren)?
 # TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück) - z.B. wo ist das Rütihubelbad?
-# TODO: Abfragen von Erdbebenzonen für EGRID (WMS der swisstopo mit getFeatureInfo auf https://wms.geo.admin.ch) -> evtl. Anreichern bei Naturgefahrenabfrage
 # TODO: Abragen aktueller Messdaten von Oberflächengewässern oder Luftqualität (klären, ob es API auf Messnetze gibt)
 # TODO: Rutschgebiete der AV (noch keine Geodaten)
 # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
