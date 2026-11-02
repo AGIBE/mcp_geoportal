@@ -380,7 +380,7 @@ async def __get_river_zones_for_egrid(
     spatial_sql = f"""
                     select
                     gwr.gewrkatt_gewrkat_de as Gewässerraumkategorie_de, gwr.gewrkatt_gewrkat_fr as Gewässerraumkategorie_fr, gwr.gewrtypt_gewrtyp_de as Gewässerraumtyp_de, gwr.gewrtypt_gewrtyp_fr as Gewässerraumtyp_fr, ST_Area(ST_Intersection(lif.geometry, gwr.geometry)) as Fläche
-                    from'{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/GEWRGNHM/gewrgnhm_gewrpoly.parquet' gwr
+                    from '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/GEWRGNHM/gewrgnhm_gewrpoly.parquet' gwr
                     join '{api_definitions["geofiles"]["api_url"]}/geoportal/pub/download/MOPUBE/mopube_lif.parquet' lif on ST_Intersects(lif.geometry, gwr.geometry)
                     where lif.egrid = ? and Fläche != 0
                     """
@@ -394,11 +394,11 @@ async def __get_river_zones_for_egrid(
             cursor.execute(spatial_sql, [egrid])
             results = cursor.fetchall()
             if not results:
-                return([{}], "")
+                return [{}], ""
             columns = [desc[0] for desc in cursor.description]
             dicts = [dict(zip(columns, row)) for row in results]
     except:
-        return([{}], "")
+        return [{}], ""
     finally:
         cursor.close()
 
