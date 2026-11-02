@@ -226,7 +226,7 @@ async def get_property_info_for_egrid(
 
 @mcp.tool(
     name="Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen",
-    description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen, Ortsnamen oder Geländenamen.
+    description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen, Ortsnamen oder Geländenamen. Falls kein exakter Treffer existiert, werden die 3 besten Alternativen geliefert.
         Returns:
             list[dict]: Jedes Dictionary enthält die Keys: 
                                 - Gemeindename: Gemeindezugehörigkeit,

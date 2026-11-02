@@ -11,11 +11,34 @@ from .create_map_link import get_map_link
 # TODO: Gibt es in der Gemeinde, in der Nähe von Gebäude im Bauinventar?
 # TODO: Gibt es in der Gemeinde XY unüberbaute Bauzonen (SEIN_UNUEBAU)?
 # TODO: Freies Übernachten/Biwakieren (z.B. darf ich am Hinterburgseeli biwakieren)?
-# TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück) - z.B. wo ist das Rütihubelbad?
+# TODO: Suchdienst für bekannte Denkmäler und Häuser (liefert Koordinaten zurück)
 # TODO: Abragen aktueller Messdaten von Oberflächengewässern oder Luftqualität (klären, ob es API auf Messnetze gibt)
 # TODO: Rutschgebiete der AV (noch keine Geodaten)
 # TODO: Darf ich an Adresse XY eine Erdwärmesonde/Grundwasserwärmesonde bauen?
-
+# TODO: Ist am Bach XYZ entlang der Parzelle Nr. xx an der Adresse XY ein Gewässerraum festgelegt?
+# TODO: Liegt die Parzelle Nr. xx an der Adresse XY innerhalb eines dicht überbauten Gebietes?
+# TODO: Wie gross ist der Nutzen von Revitalisierungsmassnahmen entlang dem Abschnitt auf der Parzelle Nr. xx an der Adresse XY? -> Geodatensatz strategische Revitalisierungsplanung
+# TODO: Gibt es «Bauwerke Fliessgewässer» entlang dem Bach XYZ in der Gemeinde ABC? -> Geodatensatz Ökomorphologie der Fliessgewässer
+# TODO: Welche «Bauwerke Fliessgewässer» gibt es entlang dem Bach XYZ in der Gemeinde ABC? -> Geodatensatz Ökomorphologie der Fliessgewässer
+# TODO: Gibt es «Abstürze Fliessgewässer» entlang dem Bach XYZ in der Gemeinde ABC? -> Geodatensatz Ökomorphologie der Fliessgewässer
+# TODO: Welche «Abstürze Fliessgewässer» gibt es entlang dem Bach XYZ in der Gemeinde ABC? -> Geodatensatz Ökomorphologie der Fliessgewässer
+# TODO: Wie grosse sind die «Abstürze Fliessgewässer» gibt es entlang dem Bach XYZ in der Gemeinde ABC? -> Geodatensatz Ökomorphologie der Fliessgewässer?
+# TODO: Tangiert der Bach XYZ in der Gemeinde ABC Fruchtfolgeflächen?
+# TODO: Tangiert der Bach XYZ in der Gemeinde ABC ein Naturschutzgebiet?
+# TODO: Tangiert der Bach XYZ in der Gemeinde ABC ein Gebiet mit Gewässer- und Grundwasserschutz?
+# TODO: Von welchen Gefährdungshinweisen ist die Parzelle Nr. xx an der Adresse XY betroffen?
+# TODO: Von welchen Naturgefahrenprozessen ist die Parzelle Nr. xx an der Adresse XY betroffen?
+# TODO: Von welchen Intensitäten nach Hauptprozessen ist die Parzelle Nr. xx an der Adresse XY betroffen?
+# TODO: Von welchen Intensitäten nach Prozessquellen ist die Parzelle Nr. xx an der Adresse XY betroffen?
+# TODO: Von welcher oder welchen Gefahrenstufen des/der Naturgefahrenprozesse(s) XX / YY etc. ist die Parzelle Nr. xx an der Adresse XY betroffen?
+# TODO: Aus welchem Jahr stammt die aktuelle Gefahrenbeurteilung auf der Parzelle Nr. xx an der Adresse XY?
+# TODO: In welchen Geodatensätzen ist auf der Parzelle Nr. xx an der Adresse XY ein Fliessgewässer eingetragen? -> (bspw. Siegfriedkarten, LK 25, Gewässernetz des Kantons Bern, AV, UP5 etc.)
+# TODO: Wie ist die Versickerungsfähigkeit auf der Parzelle Nr. xx an der Adresse XY?
+# TODO: Gibt es Altlasten auf der Parzelle Nr. xx an der Adresse XY?
+# TODO: Welche Geologie gibt es auf der Parzelle Nr. xx an der Adresse XY?
+# TODO: Gibt es Schutzwald in der Gemeinde ABC?
+# TODO: Gibt es Schutzwald auf der Parzelle Nr. xx an der Adresse XYZ?
+# TODO: Welchen Schutzwald gibt es in der Gemeinde ABC / auf der Parzelle Nr. xx an der Adresse XYZ?
 
 async def __get_municipality_infos(
     bfs_nr: int, api_definitions: dict, con: duckdb.DuckDBPyConnection
