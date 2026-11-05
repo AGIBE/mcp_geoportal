@@ -7,7 +7,7 @@ import pytest
 def pause_between_tests():
     """Die DuckDB-Aufrufe können bei den auf geofiles gehosteten Parquet-Files sporadisch SSL-Fehler auslösen. Möglicherweise, weil der dortige Webserver nicht nachkommt. Daher wird hier zwischen jedem Test eine Pause eingelegt. Wenn die Parquet-Files dereinst auf einem richtigen Cloud Storage abgelegt sind, erübrigt sich das wohl wieder."""
     yield
-    time.sleep(1)
+    time.sleep(1.5)
 
 
 @pytest.mark.anyio

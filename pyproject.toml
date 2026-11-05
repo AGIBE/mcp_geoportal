@@ -9,17 +9,11 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = "==3.14.8"
 dependencies = [
-    "duckdb==1.5.6",
+    "duckdb==2.0.0",
     "mcp[cli]==2.3.0",
     "rasterio>=1.5.2",
     "uvicorn==0.54.0",
 ]
-# DuckDB verbleibt vorderhand auf 1.5.6. Auf 2.0.0 führt das neue
-# Asynchronous I/O in Verbindung mit den Parquet-Files auf geofiles
-# zu Verbindungsfehlern. Vermutlich weil zu viele Verbindungen gleich-
-# zeitig auf den Server treffen. Wenn die Files auf Google Cloud Storage
-# liegen, kommt es nicht zu solchen Fehlern.
-
 
 [project.scripts]
 mcp-geoportal = "mcp_geoportal:main"
