@@ -1,5 +1,13 @@
+import time
 import pytest
 
+
+@pytest.fixture(autouse=True)
+def pause_between_tests():
+    """Die DuckDB-Aufrufe können bei den auf geofiles gehosteten Parquet-Files sporadisch SSL-Fehler auslösen. Möglicherweise, weil der dortige Webserver nicht nachkommt. Daher wird hier zwischen jedem Test eine Pause eingelegt. Wenn die Parquet-Files dereinst auf einem richtigen Cloud Storage abgelegt sind, erübrigt sich das wohl wieder.
+    """
+    yield
+    time.sleep(1)
 
 @pytest.mark.anyio
 async def test_get_municipality_infos_mcp_valid_bfsnr(mcp_session, bfnsr_valid):
@@ -29,6 +37,7 @@ async def test_get_coordinates_from_nomkl_mcp_valid(mcp_session, nomkl_string_va
 
     assert "Gemeindename" in result_content[0].keys()
     
+@pytest.mark.xfail(reason="Der Test macht keinen Sinn, da mit der Fuzzy-Suche immer ein Resultat zurückkommt.", strict=True)
 @pytest.mark.anyio
 async def test_get_coordinates_from_nomkl_mcp_invalid(mcp_session, nomkl_string_invalid):
     result = await mcp_session.call_tool(
@@ -191,7 +200,7 @@ async def test_get_earthquake_risk_egrid_mcp_invalid(mcp_session, egrid_invalid)
 @pytest.mark.anyio
 async def test_get_river_zones_egrid_mcp_valid(mcp_session, egrid_valid):
     result = await mcp_session.call_tool(
-        "Hole_genehmigte_Gewässerräume_zu_EGRID", {"egrid": egrid_valid}
+        "Hole_genehmigte_Gewaesserraeume_zu_EGRID", {"egrid": egrid_valid}
     )
 
     result_content = result.structured_content["result"]
@@ -206,7 +215,7 @@ async def test_get_river_zones_egrid_mcp_valid(mcp_session, egrid_valid):
 @pytest.mark.anyio
 async def test_get_river_zones_egrid_mcp_invalid(mcp_session, egrid_invalid):
     result = await mcp_session.call_tool(
-        "Hole_genehmigte_Gewässerräume_zu_EGRID", {"egrid": egrid_invalid}
+        "Hole_genehmigte_Gewaesserraeume_zu_EGRID", {"egrid": egrid_invalid}
     )
 
     result_content = result.structured_content["result"]

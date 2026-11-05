@@ -1,3 +1,4 @@
+import time
 import pytest
 from mcp_geoportal.tools import (
     __get_borehole_profiles_for_egrid,
@@ -9,6 +10,13 @@ from mcp_geoportal.tools import (
     __get_earthquake_risk_for_egrid,
     __get_river_zones_for_egrid
 )
+
+@pytest.fixture(autouse=True)
+def pause_between_tests():
+    """Die DuckDB-Aufrufe können bei den auf geofiles gehosteten Parquet-Files sporadisch SSL-Fehler auslösen. Möglicherweise, weil der dortige Webserver nicht nachkommt. Daher wird hier zwischen jedem Test eine Pause eingelegt. Wenn die Parquet-Files dereinst auf einem richtigen Cloud Storage abgelegt sind, erübrigt sich das wohl wieder.
+    """
+    yield
+    time.sleep(1)
 
 
 @pytest.mark.anyio
@@ -42,6 +50,7 @@ async def test_get_coordinates_from_nomkl_valid(
     assert "Gemeindename" in result_list[0].keys()
 
 
+@pytest.mark.xfail(reason="Der Test macht keinen Sinn, da mit der Fuzzy-Suche immer ein Resultat zurückkommt.", strict=True)
 @pytest.mark.anyio
 async def test_get_coordinates_from_nomkl_invalid(
     nomkl_string_invalid, api_definitions, duckdb_connection
