@@ -1,7 +1,7 @@
 import pytest
-from mcp_geoportal.tools import __get_oereb_extract, __get_oereb_themes
-
 from helpers import is_well_formed_xml
+
+from mcp_geoportal.tools import __get_oereb_extract, __get_oereb_themes
 
 
 @pytest.mark.anyio

@@ -41,7 +41,7 @@ def get_map_link(name_function: str, params: dict) -> str:
         scale = params.get("scale", 1000)
         lang = params.get("lang", "de")
         url = f"DIPANU_DIPANUF_KMGDM1=DIPANUF_EGRID={egrid}&addcrosshair=false&scale={scale}&lang={lang}"
-    
+
     if name_function == "get_coordinates_from_nomkl":
         lang = params.get("lang", "de")
         centerx, centery = get_center_from_bbox(params)
@@ -69,6 +69,7 @@ def get_map_link(name_function: str, params: dict) -> str:
     full_url = base_url + url
     return full_url
 
+
 def get_center_from_bbox(params: dict):
     """Berechnet das Zentrum der Bounding-Box."""
     min_x, _, min_y, _ = get_coords_from_bbox(params)
@@ -76,6 +77,7 @@ def get_center_from_bbox(params: dict):
     centerx = min_x + deltax / 2 if min_x is not None and deltax is not None else None
     centery = min_y + deltay / 2 if min_y is not None and deltay is not None else None
     return centerx, centery
+
 
 def get_coords_from_bbox(params: dict):
     """Liest die Koordinaten der Bounding-Box aus dem Parameter dict."""
@@ -85,6 +87,7 @@ def get_coords_from_bbox(params: dict):
     max_y = params.get("max_y")
     return min_x, max_x, min_y, max_y
 
+
 def get_deltas_from_bbox(params: dict):
     """Berechnet die Deltas (Breite und Höhe) der Bounding-Box."""
     min_x, max_x, min_y, max_y = get_coords_from_bbox(params)
@@ -92,7 +95,8 @@ def get_deltas_from_bbox(params: dict):
     deltay = (max_y - min_y) if min_y is not None and max_y is not None else None
     return deltax, deltay
 
-def get_scale_from_bbox(params:dict):
+
+def get_scale_from_bbox(params: dict):
     """Definiert den Kartenausschnitt-Massstab basierend auf den Bounding-Box Werten."""
     deltax, deltay = get_deltas_from_bbox(params)
     if deltax is None or deltay is None:

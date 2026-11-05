@@ -163,7 +163,9 @@ async def get_egrid_from_address(
         Returns:
             list: Ein Dictionary, der für die übergebene Gemeinde-BFS die Informationen zur Gemeinde zurückgibt.""",
 )
-async def get_municipality_infos(bfs_nr: int, ctx: Context[AppContext]) -> dict[str, str]:
+async def get_municipality_infos(
+    bfs_nr: int, ctx: Context[AppContext]
+) -> dict[str, str]:
     db = ctx.request_context.lifespan_context.db
     return await mcp_geoportal.tools.__get_municipality_infos(bfs_nr, EXTERNAL_APIS, db)
 
@@ -224,6 +226,7 @@ async def get_property_info_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
 
+
 @mcp.tool(
     name="Hole_Koordinaten_von_Ortsnamen_Flurnamen_Gelaendenamen",
     description="""Ermittelt die Koordinaten für einen gegebenen Flurnamen, Ortsnamen oder Geländenamen. Falls kein exakter Treffer existiert, werden die 3 besten Alternativen geliefert.
@@ -246,6 +249,7 @@ async def get_coordinates_from_nomkl(
         search_string, EXTERNAL_APIS, db
     )
 
+
 @mcp.tool(
     name="Hole_Erdbebenrisiko_zu_EGRID",
     description="""Ermittelt die seismische Gefährdung (Erdbebenzone) und eine vereinfachte Abschätzung der Baugrundklasse eines 
@@ -257,8 +261,7 @@ async def get_coordinates_from_nomkl(
                 Der Wert für die Erdbebenzone wird aus dem Maximum an den vier geografischen Extrempunkten (Nord, Ost, Süd, West) des
                 Grundstücks berechnet. Die Baugrundklasse wird über eine vereinfachte Abschätzung der maximalen Sedimenthöhe auf der
                 Parzelle hergeleitet: Klasse A (< 5 m), Klasse E (<= 20 m), sonst kombinierte Klasse B+C+D.
-            str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern. """
-
+            str: Link zur Kartenansicht der Baugrundklasse im Geoportal des Kantons Bern. """,
 )
 async def get_earhtquake_risk_for_egrid(
     egrid: str, ctx: Context[AppContext]
@@ -322,6 +325,7 @@ async def get_river_zones_for_egrid(
     return await mcp_geoportal.tools.__get_river_zones_for_egrid(
         egrid, EXTERNAL_APIS, db
     )
+
 
 # =================================================================================================
 # CUSTOM-ROUTES

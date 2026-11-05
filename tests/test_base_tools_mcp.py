@@ -2,7 +2,9 @@ import pytest
 
 
 @pytest.mark.anyio
-async def test_bfsnr_for_municipality_mcp_valid_municipality(unique_municipality, mcp_session):
+async def test_bfsnr_for_municipality_mcp_valid_municipality(
+    unique_municipality, mcp_session
+):
     result = await mcp_session.call_tool(
         "Suche_BFSNR_zu_Gemeinde", {"searchtext": unique_municipality[0]}
     )
@@ -20,7 +22,9 @@ async def test_bfsnr_for_municipality_mcp_inexisting_municipality(
 
 
 @pytest.mark.anyio
-async def test_bfsnr_for_municipality_mcp_multiple_municipality(multiple_municipality, mcp_session):
+async def test_bfsnr_for_municipality_mcp_multiple_municipality(
+    multiple_municipality, mcp_session
+):
     result = await mcp_session.call_tool(
         "Suche_BFSNR_zu_Gemeinde", {"searchtext": multiple_municipality}
     )

@@ -1,4 +1,5 @@
 import pytest
+
 from mcp_geoportal.tools import (
     __get_bfsnr_for_municipality,
     __get_egrid_from_address,

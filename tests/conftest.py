@@ -4,6 +4,7 @@ import pytest
 from mcp import ClientSession
 from mcp.client import Client
 from mcp.client.streamable_http import streamable_http_client
+
 from mcp_geoportal.mcp_server_geoportal import DUCKDB_EXTENSIONS, USER_AGENT, mcp
 
 
@@ -163,10 +164,12 @@ def bfnsr_invalid() -> int:
     """Nicht existierende BFS-Nummer"""
     return 666666
 
+
 @pytest.fixture
 def nomkl_string_valid() -> str:
     """Suchstring, der ein eindeutiges Ergebnis zurückgibt."""
     return "Ischmeer"
+
 
 @pytest.fixture
 def nomkl_string_invalid() -> str:
