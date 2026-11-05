@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
 
 # ---------- Stage 1: Builder ----------
-FROM python:3.14.8-slim AS builder
+FROM python:3.14.10-slim AS builder
 
-COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /uvx /bin/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libexpat1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
@@ -22,7 +26,11 @@ COPY . .
 RUN uv sync --frozen --no-dev
 
 # ---------- Stage 2: Runtime ----------
-FROM python:3.14.8-slim AS runtime
+FROM python:3.14.10-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
